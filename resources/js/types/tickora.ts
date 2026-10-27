@@ -181,3 +181,52 @@ export type NavFlags = {
     moderation: boolean;
     verification: boolean;
 };
+
+export type CheckoutStatus =
+    | 'open'
+    | 'awaiting_payment'
+    | 'completed'
+    | 'expired'
+    | 'cancelled';
+
+export type CheckoutLine = {
+    name: string | null;
+    quantity: number;
+    unit_price: Money;
+    subtotal: Money;
+    discount: Money;
+};
+
+export type CheckoutSummary = {
+    id: string;
+    status: CheckoutStatus;
+    expires_at: string;
+    seconds_left: number;
+    event: {
+        title: string;
+        slug: string;
+        date_label: string | null;
+        venue: string | null;
+        city: string | null;
+    };
+    lines: CheckoutLine[];
+    subtotal: Money;
+    discount: Money;
+    fee: Money;
+    tax: Money;
+    total: Money;
+    promo_code: string | null;
+    order: { reference: string; status: string; status_label: string } | null;
+};
+
+export type PromoCodeRow = {
+    code: string;
+    discount_label: string;
+    event: string | null;
+    starts_at: string | null;
+    ends_at: string | null;
+    redemptions: number;
+    max_redemptions: number | null;
+    max_per_customer: number | null;
+    is_active: boolean;
+};

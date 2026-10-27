@@ -40,7 +40,7 @@ class EventController extends Controller
 
         $query = Event::query()
             ->listed()
-            ->with(['category', 'venue', 'ticketTypes'])
+            ->with(['category', 'venue', 'ticketTypes' => fn ($query) => $query->withHeld()])
             ->addSelect([
                 'min_price_minor' => $this->minPriceSubquery(),
             ]);
@@ -74,14 +74,14 @@ class EventController extends Controller
             'category',
             'venue',
             'organizer',
-            'ticketTypes' => fn ($query) => $query->where('status', '!=', TicketTypeStatus::Hidden),
+            'ticketTypes' => fn ($query) => $query->withHeld()->where('status', '!=', TicketTypeStatus::Hidden),
         ]);
 
         $related = Event::query()
             ->listed()
             ->whereKeyNot($event->id)
             ->where('category_id', $event->category_id)
-            ->with(['category', 'venue', 'ticketTypes'])
+            ->with(['category', 'venue', 'ticketTypes' => fn ($query) => $query->withHeld()])
             ->orderBy('starts_at')
             ->limit(3)
             ->get()

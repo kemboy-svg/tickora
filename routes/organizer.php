@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Organizer\EventController;
 use App\Http\Controllers\Organizer\OnboardingController;
+use App\Http\Controllers\Organizer\PromoCodeController;
 use App\Http\Controllers\Organizer\SwitchWorkspaceController;
 use App\Http\Controllers\Organizer\TicketTypeController;
 use App\Http\Middleware\EnsureOrganizerWorkspace;
@@ -40,6 +41,15 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->name('organizer.')
         Route::delete('events/{managedEvent}', [EventController::class, 'destroy'])->name('events.destroy');
         Route::post('events/{managedEvent}/submit', [EventController::class, 'submit'])->name('events.submit');
         Route::post('events/{managedEvent}/cancel', [EventController::class, 'cancel'])->name('events.cancel');
+
+        Route::get('promo-codes', [PromoCodeController::class, 'index'])->name('promo-codes.index');
+        Route::post('promo-codes', [PromoCodeController::class, 'store'])->name('promo-codes.store');
+        Route::put('promo-codes/{promoCode}', [PromoCodeController::class, 'update'])
+            ->where('promoCode', '[A-Za-z0-9_-]+')
+            ->name('promo-codes.update');
+        Route::delete('promo-codes/{promoCode}', [PromoCodeController::class, 'destroy'])
+            ->where('promoCode', '[A-Za-z0-9_-]+')
+            ->name('promo-codes.destroy');
 
         Route::scopeBindings()->group(function () {
             Route::post('events/{managedEvent}/ticket-types', [TicketTypeController::class, 'store'])

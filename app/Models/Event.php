@@ -195,4 +195,21 @@ class Event extends Model
 
         $this->save();
     }
+
+    /**
+     * Whether tickets can be bought right now: published, not over, and
+     * inside the event's own sales window (ticket types add their own).
+     */
+    public function salesOpenAt(CarbonInterface $now): bool
+    {
+        if ($this->status !== EventStatus::Published || $this->ends_at->lte($now)) {
+            return false;
+        }
+
+        if ($this->sales_starts_at !== null && $now->lt($this->sales_starts_at)) {
+            return false;
+        }
+
+        return $this->sales_ends_at === null || $now->lt($this->sales_ends_at);
+    }
 }

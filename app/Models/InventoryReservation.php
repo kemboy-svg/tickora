@@ -17,6 +17,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $checkout_id
  * @property int $ticket_type_id
  * @property int $quantity
+ * @property string|null $ticket_name_snapshot
+ * @property int $unit_amount_minor
+ * @property int $subtotal_minor
+ * @property int $discount_minor
+ * @property int $fee_minor
+ * @property int $tax_minor
  * @property ReservationStatus $status
  * @property CarbonInterface $expires_at
  * @property CarbonInterface|null $created_at
@@ -39,6 +45,11 @@ class InventoryReservation extends Model
         return [
             'status' => ReservationStatus::class,
             'quantity' => 'integer',
+            'unit_amount_minor' => 'integer',
+            'subtotal_minor' => 'integer',
+            'discount_minor' => 'integer',
+            'fee_minor' => 'integer',
+            'tax_minor' => 'integer',
             'expires_at' => 'datetime',
         ];
     }

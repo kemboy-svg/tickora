@@ -7,6 +7,7 @@ use App\Enums\CheckoutStatus;
 use App\Models\Concerns\HasPublicId;
 use App\Support\Money;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -110,5 +111,40 @@ class Checkout extends Model
     public function isExpired(): bool
     {
         return $this->expires_at->isPast();
+    }
+
+    /**
+     * Still holding tickets right now: open or awaiting payment and not
+     * past its expiry, even if the expiry job has not swept it yet.
+     */
+    public function isHolding(): bool
+    {
+        return $this->status->holdsInventory() && ! $this->isExpired();
+    }
+
+    public function belongsToCustomer(User $user): bool
+    {
+        return $this->user_id !== null && $this->user_id === $user->id;
+    }
+
+    /**
+     * The total as Money, plus the other amount columns.
+     */
+    public function money(string $column): Money
+    {
+        $value = $this->getAttribute($column);
+
+        return Money::ofMinor(is_int($value) ? $value : 0, $this->currency);
+    }
+
+    /**
+     * Checkouts still holding inventory: open or awaiting payment and unexpired.
+     *
+     * @param  Builder<static>  $query
+     */
+    public function scopeHolding(Builder $query): void
+    {
+        $query->whereIn('status', [CheckoutStatus::Open, CheckoutStatus::AwaitingPayment])
+            ->where('expires_at', '>', now());
     }
 }

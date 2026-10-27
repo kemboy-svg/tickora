@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { CalendarDays, MapPin, ShieldCheck } from '@lucide/vue';
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import EventCard from '@/components/tickora/EventCard.vue';
 import StatusBadge from '@/components/tickora/StatusBadge.vue';
 import type { EventCard as EventCardData, EventDetail } from '@/types';
@@ -61,9 +61,48 @@ function max(id: string): number {
     return type ? Math.min(type.max_per_order, type.remaining) : 0;
 }
 
+function min(id: string): number {
+    return (
+        props.event.ticket_types.find((t) => t.id === id)?.min_per_order ?? 1
+    );
+}
+
+// Steps straight between 0 and a ticket type's minimum group size, so the
+// selector never shows a quantity the server would reject.
 function change(id: string, delta: number): void {
-    const next = (quantities[id] ?? 0) + delta;
+    const current = quantities[id] ?? 0;
+    let next = current + delta;
+
+    if (delta > 0 && current === 0) {
+        next = min(id);
+    } else if (delta < 0 && current <= min(id)) {
+        next = 0;
+    }
+
     quantities[id] = Math.max(0, Math.min(max(id), next));
+}
+
+const page = usePage();
+const signedIn = computed(() => Boolean(page.props.auth?.user));
+
+const form = useForm({
+    event: props.event.id,
+    items: {} as Record<string, number>,
+    promo_code: '',
+});
+
+const showPromo = computed(
+    () => form.promo_code !== '' || Boolean(form.errors.promo_code),
+);
+const promoOpen = ref(false);
+
+function checkout(): void {
+    form.transform((data) => ({
+        ...data,
+        items: Object.fromEntries(
+            Object.entries(quantities).filter(([, n]) => n > 0),
+        ),
+    })).post('/checkout', { preserveScroll: true });
 }
 </script>
 
@@ -349,14 +388,80 @@ function change(id: string, delta: number): void {
                                 subtotalLabel
                             }}</span>
                         </div>
-                        <button
-                            type="button"
-                            disabled
-                            class="min-h-12 rounded-xl bg-primary font-extrabold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                        <div
+                            v-if="signedIn && event.sales_open"
+                            class="flex flex-col gap-2"
                         >
-                            Checkout opens soon
+                            <button
+                                v-if="!showPromo && !promoOpen"
+                                type="button"
+                                class="self-start text-sm font-bold text-primary underline-offset-4 hover:underline"
+                                @click="promoOpen = true"
+                            >
+                                Have a promo code?
+                            </button>
+                            <template v-else>
+                                <label
+                                    for="promo_code"
+                                    class="text-sm font-bold"
+                                    >Promo code</label
+                                >
+                                <input
+                                    id="promo_code"
+                                    v-model="form.promo_code"
+                                    type="text"
+                                    autocomplete="off"
+                                    maxlength="40"
+                                    class="min-h-11 rounded-lg border bg-background px-3 uppercase"
+                                    :aria-invalid="
+                                        Boolean(form.errors.promo_code)
+                                    "
+                                    aria-describedby="promo_error"
+                                />
+                                <p
+                                    v-if="form.errors.promo_code"
+                                    id="promo_error"
+                                    class="text-sm text-destructive"
+                                >
+                                    {{ form.errors.promo_code }}
+                                </p>
+                            </template>
+                        </div>
+
+                        <p
+                            v-if="form.errors.items || form.errors.event"
+                            role="alert"
+                            class="rounded-lg bg-destructive/10 p-3 text-sm font-semibold text-destructive"
+                        >
+                            {{ form.errors.items ?? form.errors.event }}
+                        </p>
+
+                        <button
+                            v-if="signedIn"
+                            type="button"
+                            :disabled="
+                                !event.sales_open ||
+                                count === 0 ||
+                                form.processing
+                            "
+                            class="min-h-12 rounded-xl bg-primary font-extrabold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                            @click="checkout"
+                        >
+                            {{
+                                form.processing
+                                    ? 'Holding your tickets…'
+                                    : 'Get tickets'
+                            }}
                         </button>
+                        <Link
+                            v-else
+                            href="/login"
+                            class="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary font-extrabold text-primary-foreground"
+                        >
+                            Log in to buy tickets
+                        </Link>
                         <p class="text-xs text-muted-foreground">
+                            Tickets are held for 10 minutes while you check out.
                             Booking fee and any tax are shown before you pay.
                             <template v-if="event.sales_end_label">
                                 Online sales close {{ event.sales_end_label }}.

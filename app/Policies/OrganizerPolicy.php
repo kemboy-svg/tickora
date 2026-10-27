@@ -43,6 +43,14 @@ class OrganizerPolicy
         return $user->hasOrganizerPermission($organizer, Permission::EventsCreate);
     }
 
+    /**
+     * Create, pause and delete the organiser's promo codes.
+     */
+    public function managePromoCodes(User $user, Organizer $organizer): bool
+    {
+        return $user->hasOrganizerPermission($organizer, Permission::TicketsManage);
+    }
+
     public function viewReports(User $user, Organizer $organizer): bool
     {
         return $user->hasOrganizerPermission($organizer, Permission::ReportsView);

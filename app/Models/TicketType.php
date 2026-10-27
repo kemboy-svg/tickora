@@ -9,6 +9,7 @@ use App\Support\Money;
 use Carbon\CarbonInterface;
 use Database\Factories\TicketTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property TicketTypeStatus $status
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
+ * @property-read int|string|null $held_quantity
  */
 #[Fillable([
     'name', 'description', 'currency', 'unit_amount_minor', 'quantity_total',
@@ -113,5 +115,27 @@ class TicketType extends Model
         }
 
         return $this->sales_ends_at === null || $moment->lt($this->sales_ends_at);
+    }
+
+    /**
+     * Adds held_quantity: tickets currently held by unexpired checkouts.
+     *
+     * @param  Builder<static>  $query
+     */
+    public function scopeWithHeld(Builder $query): void
+    {
+        $query->withSum(['reservations as held_quantity' => fn ($q) => $q->holding()], 'quantity');
+    }
+
+    /**
+     * Tickets still purchasable. Uses held_quantity when it was loaded with
+     * withHeld(); otherwise counts sold tickets only. Checkout itself never
+     * relies on this figure: it recomputes availability under a row lock.
+     */
+    public function remaining(): int
+    {
+        $held = $this->getAttributes()['held_quantity'] ?? 0;
+
+        return max(0, $this->quantity_total - $this->quantity_sold - (int) $held);
     }
 }

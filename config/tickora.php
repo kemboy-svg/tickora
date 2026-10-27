@@ -7,13 +7,18 @@ return [
     | Platform commission
     |--------------------------------------------------------------------------
     |
-    | The platform fee charged on each order, in basis points of the ticket
-    | subtotal (500 = 5.00%). Fees are calculated in minor units and rounded
-    | half-up once per order line, never on floating point values.
+    | The booking fee added to each order and paid by the customer, in basis
+    | points of the ticket subtotal after discounts (500 = 5.00%). Free
+    | orders pay no fee. booking_fee_tax_bps is the tax charged on that fee
+    | (e.g. 1500 for 15% VAT in Mauritius); ticket prices are tax-inclusive.
+    | All amounts are calculated in minor units, rounding half away from
+    | zero, never with floating point.
     |
     */
 
     'platform_fee_bps' => (int) env('TICKORA_PLATFORM_FEE_BPS', 500),
+
+    'booking_fee_tax_bps' => (int) env('TICKORA_BOOKING_FEE_TAX_BPS', 0),
 
     /*
     |--------------------------------------------------------------------------
@@ -26,6 +31,13 @@ return [
     */
 
     'reservation_ttl_minutes' => (int) env('TICKORA_RESERVATION_TTL_MINUTES', 10),
+
+    // Once the customer moves on to payment the hold is extended to this,
+    // so bank verification (3-D Secure) has time to finish.
+    'payment_window_minutes' => (int) env('TICKORA_PAYMENT_WINDOW_MINUTES', 15),
+
+    // Upper bound on tickets in one order, across all ticket types.
+    'max_tickets_per_order' => (int) env('TICKORA_MAX_TICKETS_PER_ORDER', 20),
 
     /*
     |--------------------------------------------------------------------------

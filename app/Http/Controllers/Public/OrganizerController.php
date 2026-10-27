@@ -22,7 +22,7 @@ class OrganizerController extends Controller
         $events = Event::query()
             ->listed()
             ->forOrganizer($organizer)
-            ->with(['category', 'venue', 'ticketTypes'])
+            ->with(['category', 'venue', 'ticketTypes' => fn ($query) => $query->withHeld()])
             ->orderBy('starts_at')
             ->get()
             ->map(fn (Event $e): array => EventPresenter::card($e))

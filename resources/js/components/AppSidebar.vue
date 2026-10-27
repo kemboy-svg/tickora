@@ -6,6 +6,7 @@ import {
     Globe,
     LayoutGrid,
     Store,
+    TicketPercent,
     Ticket,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -37,6 +38,11 @@ const organizerNavItems = computed<NavItem[]>(() =>
     nav.value?.organizer
         ? [
               { title: 'My events', href: '/organizer/events', icon: Ticket },
+              {
+                  title: 'Promo codes',
+                  href: '/organizer/promo-codes',
+                  icon: TicketPercent,
+              },
               {
                   title: 'Create event',
                   href: '/organizer/events/create',

@@ -91,8 +91,8 @@ final class EventPresenter
                     'description' => $type->description,
                     'price' => $type->price,
                     'is_free' => $type->isFree(),
-                    'remaining' => max(0, $type->quantity_total - $type->quantity_sold),
-                    'sold_out' => $type->quantity_sold >= $type->quantity_total,
+                    'remaining' => $type->remaining(),
+                    'sold_out' => $type->remaining() === 0,
                     'on_sale' => $type->isOnSaleAt($now),
                     'sales_end_label' => LocalTime::display($type->sales_ends_at, $event->timezone),
                     'min_per_order' => $type->min_per_order,
@@ -192,7 +192,7 @@ final class EventPresenter
     {
         $types = self::publicTicketTypes($event);
         $capacity = $types->sum('quantity_total');
-        $remaining = $types->sum(fn (TicketType $t): int => max(0, $t->quantity_total - $t->quantity_sold));
+        $remaining = $types->sum(fn (TicketType $t): int => $t->remaining());
 
         if ($capacity === 0 || $remaining === 0) {
             return 'sold_out';
@@ -203,15 +203,7 @@ final class EventPresenter
 
     public static function salesOpen(Event $event, CarbonImmutable $now): bool
     {
-        if ($event->status !== EventStatus::Published || $event->ends_at->lte($now)) {
-            return false;
-        }
-
-        if ($event->sales_starts_at !== null && $now->lt($event->sales_starts_at)) {
-            return false;
-        }
-
-        return $event->sales_ends_at === null || $now->lt($event->sales_ends_at);
+        return $event->salesOpenAt($now);
     }
 
     /**

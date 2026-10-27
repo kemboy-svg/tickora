@@ -15,7 +15,7 @@ class HomeController extends Controller
     {
         $upcoming = Event::query()
             ->listed()
-            ->with(['category', 'venue', 'ticketTypes'])
+            ->with(['category', 'venue', 'ticketTypes' => fn ($query) => $query->withHeld()])
             ->orderBy('starts_at')
             ->limit(12)
             ->get();

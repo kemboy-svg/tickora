@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Public\EventController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\OrganizerController;
@@ -16,6 +17,16 @@ Route::get('organizers/{organizer:slug}', [OrganizerController::class, 'show'])-
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+
+    Route::post('checkout', [CheckoutController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('checkout.store');
+    Route::get('checkout/{checkout}', [CheckoutController::class, 'show'])->name('checkout.show');
+    Route::post('checkout/{checkout}/promo', [CheckoutController::class, 'promo'])
+        ->middleware('throttle:20,1')
+        ->name('checkout.promo');
+    Route::post('checkout/{checkout}/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
+    Route::delete('checkout/{checkout}', [CheckoutController::class, 'destroy'])->name('checkout.destroy');
 });
 
 require __DIR__.'/organizer.php';

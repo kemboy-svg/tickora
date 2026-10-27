@@ -69,10 +69,10 @@ Done:
 
 1. **Foundation**: schema, roles, policies, audit trail, payment contract and CI.
 2. **Organisers, events and discovery**: organiser onboarding and workspace switching, event drafts with timezone-aware scheduling, ticket types, submit → review → publish, cancellation, the admin review queue and organiser verification, and the public homepage, discovery filters, event pages and organiser profiles.
+3. **Checkout and inventory**: tickets are held for 10 minutes by locking the ticket type rows and recounting availability in the same transaction, so two buyers can never get the last ticket (proved by a test that races separate processes against PostgreSQL). Server-side pricing with a customer booking fee, optional tax on the fee and promo codes; confirming creates a pending order with name and price snapshots and extends the hold to 15 minutes for payment. Expired holds stop counting immediately and are swept every minute by `php artisan tickora:expire-holds` (run `php artisan schedule:work` locally). Organisers manage promo codes under **Promo codes**.
 
 Next, per the implementation plan:
 
-3. Inventory reservations with row locking, checkout and pricing snapshots, expiry job
 4. A real payment provider adapter, signed webhook endpoint, reconciliation and refunds
 5. Ticket issuance, email/PDF delivery and the atomic check-in API
 6. Organiser dashboards, reports, attendee export and the admin console
