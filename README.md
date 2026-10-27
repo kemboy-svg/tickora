@@ -65,13 +65,19 @@ A modular monolith: one Laravel app, one PostgreSQL database, business rules in 
 
 ## Status
 
-Phase 1 (foundation) is in place: schema, roles, policies, audit trail, payment contract and CI. Next, per the implementation plan:
+Done:
 
-2. Organiser onboarding, event CRUD and review, ticket types, public discovery
+1. **Foundation**: schema, roles, policies, audit trail, payment contract and CI.
+2. **Organisers, events and discovery**: organiser onboarding and workspace switching, event drafts with timezone-aware scheduling, ticket types, submit → review → publish, cancellation, the admin review queue and organiser verification, and the public homepage, discovery filters, event pages and organiser profiles.
+
+Next, per the implementation plan:
+
 3. Inventory reservations with row locking, checkout and pricing snapshots, expiry job
 4. A real payment provider adapter, signed webhook endpoint, reconciliation and refunds
 5. Ticket issuance, email/PDF delivery and the atomic check-in API
 6. Organiser dashboards, reports, attendee export and the admin console
 7. Load and security testing, monitoring, backups and launch runbooks
+
+The admin area (`/admin/events`, `/admin/organizers`) requires two-factor authentication: sign in as `admin@tickora.test` and enable it under Settings → Security first.
 
 Payment provider choice and onboarding depend on the platform's legal entity, countries and settlement currencies. Confirm these before committing to a provider or a launch date.
