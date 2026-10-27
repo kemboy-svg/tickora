@@ -8,6 +8,7 @@ use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\BelongsToOrganizer;
 use App\Models\Concerns\HasPublicId;
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,27 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read Money $tax
  * @property-read Money $total
  * @property-read Money $refunded
+ * @property int $id
+ * @property string $public_id
+ * @property string $reference
+ * @property int|null $checkout_id
+ * @property int|null $user_id
+ * @property string $customer_email
+ * @property string|null $customer_name
+ * @property int $organizer_id
+ * @property int $event_id
+ * @property string $currency
+ * @property int $subtotal_minor
+ * @property int $discount_minor
+ * @property int $platform_fee_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property int $refunded_minor
+ * @property OrderStatus $status
+ * @property CarbonInterface|null $paid_at
+ * @property CarbonInterface|null $cancelled_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class Order extends Model
 {

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\MembershipStatus;
 use App\Enums\OrganizerStatus;
 use App\Models\Concerns\HasPublicId;
+use Carbon\CarbonInterface;
 use Database\Factories\OrganizerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * The tenant: a company or person selling tickets on Tickora.
+ *
+ * @property int $id
+ * @property string $public_id
+ * @property int $owner_user_id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $description
+ * @property string $country_code
+ * @property string $default_currency
+ * @property string|null $payout_currency
+ * @property OrganizerStatus $status
+ * @property string|null $support_email
+ * @property CarbonInterface|null $verified_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 #[Fillable(['name', 'slug', 'description', 'country_code', 'default_currency', 'support_email'])]
 class Organizer extends Model

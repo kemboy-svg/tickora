@@ -85,7 +85,17 @@ jobs:
 
       - name: Static analysis (PHPStan)
         if: ${{ !cancelled() }}
-        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G --error-format=github
+        # GitHub shows at most 10 annotations per step, so on failure the
+        # full report is also emitted as one annotation.
+        run: |
+          if vendor/bin/phpstan analyse --no-progress --memory-limit=1G --error-format=raw > phpstan.txt 2>&1; then
+            cat phpstan.txt
+          else
+            cat phpstan.txt
+            report=$(head -c 60000 phpstan.txt | python3 -c "import sys; print(sys.stdin.read().replace('%','%25').replace('\r','').replace('\n','%0A'))")
+            echo "::error title=PHPStan report::${report}"
+            exit 1
+          fi
 
       - name: Tests (PHPUnit on PostgreSQL)
         if: ${{ !cancelled() }}

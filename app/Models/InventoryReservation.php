@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ReservationStatus;
 use App\Exceptions\InvalidStateTransition;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Tickets held for a checkout until it is paid or expires. Active
  * reservations count against a ticket type's availability.
+ *
+ * @property int $id
+ * @property int $checkout_id
+ * @property int $ticket_type_id
+ * @property int $quantity
+ * @property ReservationStatus $status
+ * @property CarbonInterface $expires_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class InventoryReservation extends Model
 {

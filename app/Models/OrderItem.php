@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * One ticket type on an order, with price and name snapshots. Amounts are
  * in the order's currency, which lineTotal() takes from the caller.
+ *
+ * @property int $id
+ * @property int $order_id
+ * @property int $ticket_type_id
+ * @property string $ticket_name_snapshot
+ * @property int $quantity
+ * @property int $unit_amount_minor
+ * @property int $discount_minor
+ * @property int $line_total_minor
+ * @property int $fee_minor
+ * @property int $tax_minor
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class OrderItem extends Model
 {

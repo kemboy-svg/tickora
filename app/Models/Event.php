@@ -7,6 +7,7 @@ use App\Enums\EventVisibility;
 use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\BelongsToOrganizer;
 use App\Models\Concerns\HasPublicId;
+use Carbon\CarbonInterface;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,35 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Times are stored in UTC; `timezone` is the IANA zone used for display.
+ *
+ * @property int $id
+ * @property string $public_id
+ * @property int $organizer_id
+ * @property int $category_id
+ * @property int|null $venue_id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $summary
+ * @property string|null $description
+ * @property string|null $cover_image_key
+ * @property string $timezone
+ * @property string $currency
+ * @property CarbonInterface $starts_at
+ * @property CarbonInterface $ends_at
+ * @property CarbonInterface|null $sales_starts_at
+ * @property CarbonInterface|null $sales_ends_at
+ * @property EventStatus $status
+ * @property EventVisibility $visibility
+ * @property string|null $refund_policy
+ * @property int|null $min_age
+ * @property CarbonInterface|null $submitted_at
+ * @property int|null $reviewed_by
+ * @property string|null $review_notes
+ * @property CarbonInterface|null $published_at
+ * @property CarbonInterface|null $cancelled_at
+ * @property string|null $cancellation_reason
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 #[Fillable([
     'category_id', 'venue_id', 'title', 'slug', 'summary', 'description', 'cover_image_key',

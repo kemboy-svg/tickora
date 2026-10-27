@@ -7,6 +7,7 @@ use App\Enums\RefundStatus;
 use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\HasPublicId;
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +16,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * steps performed by different roles.
  *
  * @property-read Money $amount
+ * @property int $id
+ * @property string $public_id
+ * @property int $order_id
+ * @property int|null $payment_id
+ * @property string|null $provider_refund_id
+ * @property string $idempotency_key
+ * @property string $currency
+ * @property int $amount_minor
+ * @property string|null $reason
+ * @property RefundStatus $status
+ * @property int|null $requested_by
+ * @property int|null $approved_by
+ * @property CarbonInterface|null $approved_at
+ * @property CarbonInterface|null $processed_at
+ * @property string|null $failure_reason
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class Refund extends Model
 {

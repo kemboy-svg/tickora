@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\HasPublicId;
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property-read Money $amount
  * @property-read Money $refunded
+ * @property int $id
+ * @property string $public_id
+ * @property int $order_id
+ * @property string $provider
+ * @property string|null $provider_account_id
+ * @property string|null $provider_payment_id
+ * @property string|null $provider_status
+ * @property string $idempotency_key
+ * @property string $currency
+ * @property int $amount_minor
+ * @property int $refunded_minor
+ * @property PaymentStatus $status
+ * @property CarbonInterface|null $authorized_at
+ * @property CarbonInterface|null $captured_at
+ * @property CarbonInterface|null $failed_at
+ * @property string|null $failure_code
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class Payment extends Model
 {

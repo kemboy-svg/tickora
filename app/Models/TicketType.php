@@ -19,6 +19,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Regular, VIP, VVIP …). Its currency always matches the event's.
  *
  * @property-read Money $price
+ * @property int $id
+ * @property string $public_id
+ * @property int $event_id
+ * @property string $name
+ * @property string|null $description
+ * @property string $currency
+ * @property int $unit_amount_minor
+ * @property int $quantity_total
+ * @property int $quantity_sold
+ * @property CarbonInterface|null $sales_starts_at
+ * @property CarbonInterface|null $sales_ends_at
+ * @property int $min_per_order
+ * @property int $max_per_order
+ * @property int $sort_order
+ * @property TicketTypeStatus $status
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 #[Fillable([
     'name', 'description', 'currency', 'unit_amount_minor', 'quantity_total',

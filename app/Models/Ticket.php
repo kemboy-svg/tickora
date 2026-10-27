@@ -6,6 +6,7 @@ use App\Enums\TicketStatus;
 use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\HasPublicId;
 use App\Support\TicketToken;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * One admission. The QR code carries a random token whose SHA-256 hash is
  * qr_token_hash; the raw token is never stored. Tickets are issued only by
  * the IssueTickets action after confirmed payment, so nothing is fillable.
+ *
+ * @property int $id
+ * @property string $public_id
+ * @property string $reference
+ * @property int $order_id
+ * @property int $order_item_id
+ * @property int $event_id
+ * @property int $ticket_type_id
+ * @property int|null $holder_user_id
+ * @property string|null $attendee_name
+ * @property string|null $attendee_email
+ * @property string $qr_token_hash
+ * @property TicketStatus $status
+ * @property CarbonInterface $issued_at
+ * @property CarbonInterface|null $checked_in_at
+ * @property CarbonInterface|null $voided_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class Ticket extends Model
 {

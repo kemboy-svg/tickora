@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -9,6 +10,18 @@ use LogicException;
 
 /**
  * Written only through App\Services\Audit\AuditLogger.
+ *
+ * @property int $id
+ * @property int|null $actor_user_id
+ * @property string $actor_type
+ * @property string $action
+ * @property string|null $subject_type
+ * @property int|null $subject_id
+ * @property int|null $organizer_id
+ * @property array<array-key, mixed>|null $metadata
+ * @property string|null $ip_address
+ * @property string|null $user_agent
+ * @property CarbonInterface|null $created_at
  */
 class AuditLog extends Model
 {

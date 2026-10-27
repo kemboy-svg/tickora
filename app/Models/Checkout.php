@@ -6,6 +6,7 @@ use App\Casts\AsMoney;
 use App\Enums\CheckoutStatus;
 use App\Models\Concerns\HasPublicId;
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,6 +19,23 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *
  * @property-read Money $subtotal
  * @property-read Money $total
+ * @property int $id
+ * @property string $public_id
+ * @property int|null $user_id
+ * @property int $event_id
+ * @property int|null $promo_code_id
+ * @property string $customer_email
+ * @property string $currency
+ * @property int $subtotal_minor
+ * @property int $discount_minor
+ * @property int $fees_minor
+ * @property int $tax_minor
+ * @property int $total_minor
+ * @property CheckoutStatus $status
+ * @property CarbonInterface $expires_at
+ * @property CarbonInterface|null $completed_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class Checkout extends Model
 {

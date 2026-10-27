@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganizer;
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,22 @@ use InvalidArgumentException;
 /**
  * discount_type "percent": discount_value is basis points (1000 = 10%).
  * discount_type "fixed": discount_value is minor units in `currency`.
+ *
+ * @property int $id
+ * @property int $organizer_id
+ * @property int|null $event_id
+ * @property string $code
+ * @property string $discount_type
+ * @property int $discount_value
+ * @property string|null $currency
+ * @property CarbonInterface|null $starts_at
+ * @property CarbonInterface|null $ends_at
+ * @property int|null $max_redemptions
+ * @property int $redemptions_count
+ * @property int|null $max_per_customer
+ * @property bool $is_active
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 #[Fillable([
     'event_id', 'code', 'discount_type', 'discount_value', 'currency',

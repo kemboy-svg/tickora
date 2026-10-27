@@ -6,6 +6,7 @@ use App\Casts\AsMoney;
 use App\Enums\LedgerEntryType;
 use App\Models\Concerns\BelongsToOrganizer;
 use App\Support\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
@@ -17,6 +18,20 @@ use LogicException;
  * error.
  *
  * @property-read Money $amount
+ * @property int $id
+ * @property int $organizer_id
+ * @property int|null $event_id
+ * @property int|null $order_id
+ * @property int|null $payment_id
+ * @property int|null $refund_id
+ * @property int|null $organizer_payout_id
+ * @property LedgerEntryType $entry_type
+ * @property string $currency
+ * @property int $amount_minor
+ * @property string|null $description
+ * @property string|null $external_reference
+ * @property string $idempotency_key
+ * @property CarbonInterface|null $created_at
  */
 class LedgerEntry extends Model
 {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Grants one user gate-scanning access to one event. Revoking sets
  * revoked_at; the row stays for the audit trail. Managed only through the
  * AssignEventStaff / RevokeEventStaff actions, so nothing is fillable.
+ *
+ * @property int $id
+ * @property int $event_id
+ * @property int $user_id
+ * @property int|null $assigned_by
+ * @property CarbonInterface|null $revoked_at
+ * @property int|null $revoked_by
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class EventStaffAssignment extends Model
 {
