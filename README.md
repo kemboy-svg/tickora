@@ -6,7 +6,7 @@ Laravel 13 · PHP 8.3+ · Vue 3 · Inertia · TypeScript · Tailwind CSS · Post
 
 ## Getting started
 
-Requirements: PHP 8.3+ with `pdo_pgsql` and `intl`, Composer, Node 22, PostgreSQL 16, Redis.
+Requirements: PHP 8.3+ with `pdo_pgsql` and `intl`, Composer, Node 22, PostgreSQL 16. Locally, cache and queues use the database; in production set `CACHE_STORE=redis` and `QUEUE_CONNECTION=redis` and run Redis.
 
 ```bash
 createuser tickora --pwprompt          # any local password; put it in .env
