@@ -68,5 +68,42 @@ jobs:
       - name: Setup Application
         run: composer setup
 
-      - name: Run CI Checks
-        run: composer ci:check
+      # Each check is its own step and runs even if an earlier one failed,
+      # so one push reports every problem at once.
+
+      - name: Frontend lint and format
+        if: ${{ !cancelled() }}
+        run: npm run check
+
+      - name: Frontend type check
+        if: ${{ !cancelled() }}
+        run: npm run types:check
+
+      - name: Code style (Pint)
+        if: ${{ !cancelled() }}
+        run: vendor/bin/pint --parallel --test
+
+      - name: Static analysis (PHPStan)
+        if: ${{ !cancelled() }}
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G --error-format=github
+
+      - name: Tests (PHPUnit on PostgreSQL)
+        if: ${{ !cancelled() }}
+        run: |
+          php artisan config:clear --ansi
+          php artisan test --log-junit junit.xml
+
+      - name: Report failing tests
+        if: ${{ failure() && hashFiles('junit.xml') != '' }}
+        shell: python3 {0}
+        run: |
+          import xml.etree.ElementTree as ET
+          for case in ET.parse("junit.xml").iter("testcase"):
+              for kind in ("failure", "error"):
+                  node = case.find(kind)
+                  if node is None:
+                      continue
+                  text = (node.text or node.get("message") or "").strip()
+                  text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:1500]
+                  title = f"{case.get('class', '')}::{case.get('name', '')}"
+                  print(f"::error file={case.get('file', '')},title={title}::{text}")

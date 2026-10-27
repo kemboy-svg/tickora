@@ -20,15 +20,15 @@ composer dev                           # app, queue worker, logs and Vite
 
 Seeded accounts (password `password`):
 
-| Email | Role |
-| --- | --- |
-| `admin@tickora.test` | Platform admin |
-| `finance@tickora.test` | Platform finance |
-| `kavish@kazproductions.test` | Owner, Kaz Productions (MUR) |
-| `nadia@kazproductions.test` | Manager, Kaz Productions |
-| `priya@kazproductions.test` | Gate staff, assigned to *Sega Nights* |
-| `wanjiru@nairobilive.test` | Owner, Nairobi Live (KES) |
-| `amara@example.test` | Customer |
+| Email                        | Role                                  |
+| ---------------------------- | ------------------------------------- |
+| `admin@tickora.test`         | Platform admin                        |
+| `finance@tickora.test`       | Platform finance                      |
+| `kavish@kazproductions.test` | Owner, Kaz Productions (MUR)          |
+| `nadia@kazproductions.test`  | Manager, Kaz Productions              |
+| `priya@kazproductions.test`  | Gate staff, assigned to _Sega Nights_ |
+| `wanjiru@nairobilive.test`   | Owner, Nairobi Live (KES)             |
+| `amara@example.test`         | Customer                              |
 
 ## Checks
 
@@ -41,17 +41,17 @@ composer ci:check   # the above plus frontend lint and type-check, as CI runs it
 
 A modular monolith: one Laravel app, one PostgreSQL database, business rules in actions and domain services rather than controllers.
 
-| Where | What |
-| --- | --- |
-| `app/Enums` | Statuses with explicit state machines (`canTransitionTo`), organiser and platform roles, permissions |
-| `app/Support/Money.php` | Integer minor units + ISO 4217 code. No floats; half-away-from-zero rounding; lossless `allocate()` |
-| `app/Support/TicketToken.php` | 256-bit QR tokens. Only the SHA-256 hash is stored |
-| `app/Contracts/Payments` | `PaymentGateway`: the only way code talks to a payment provider |
-| `app/Services/Payments/Fake` | Sandbox provider with idempotent sessions and HMAC-signed webhooks; refuses to run in production |
-| `app/Models/Concerns` | `HasPublicId` (ULIDs in URLs, never internal IDs) and `BelongsToOrganizer` (`visibleTo()` tenant scope) |
-| `app/Policies` | All authorisation, always scoped to the resource's own organiser |
-| `app/Actions` | Team, staff-assignment and admin actions; each authorises and writes the audit trail |
-| `app/Services/Audit` | `AuditLogger`, which scrubs secrets from metadata |
+| Where                         | What                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `app/Enums`                   | Statuses with explicit state machines (`canTransitionTo`), organiser and platform roles, permissions    |
+| `app/Support/Money.php`       | Integer minor units + ISO 4217 code. No floats; half-away-from-zero rounding; lossless `allocate()`     |
+| `app/Support/TicketToken.php` | 256-bit QR tokens. Only the SHA-256 hash is stored                                                      |
+| `app/Contracts/Payments`      | `PaymentGateway`: the only way code talks to a payment provider                                         |
+| `app/Services/Payments/Fake`  | Sandbox provider with idempotent sessions and HMAC-signed webhooks; refuses to run in production        |
+| `app/Models/Concerns`         | `HasPublicId` (ULIDs in URLs, never internal IDs) and `BelongsToOrganizer` (`visibleTo()` tenant scope) |
+| `app/Policies`                | All authorisation, always scoped to the resource's own organiser                                        |
+| `app/Actions`                 | Team, staff-assignment and admin actions; each authorises and writes the audit trail                    |
+| `app/Services/Audit`          | `AuditLogger`, which scrubs secrets from metadata                                                       |
 
 ### Rules worth knowing
 
