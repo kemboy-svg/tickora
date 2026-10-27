@@ -108,12 +108,21 @@ jobs:
         shell: python3 {0}
         run: |
           import xml.etree.ElementTree as ET
+
+          def escape(text):
+              return text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+
+          failures = []
           for case in ET.parse("junit.xml").iter("testcase"):
               for kind in ("failure", "error"):
                   node = case.find(kind)
-                  if node is None:
-                      continue
-                  text = (node.text or node.get("message") or "").strip()
-                  text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:1500]
-                  title = f"{case.get('class', '')}::{case.get('name', '')}"
-                  print(f"::error file={case.get('file', '')},title={title}::{text}")
+                  if node is not None:
+                      text = (node.text or node.get("message") or "").strip()
+                      failures.append((f"{case.get('class', '')}::{case.get('name', '')}", text))
+
+          # GitHub keeps only 10 annotations per step: one summary of every
+          # failure first, then details for the first few.
+          summary = "\n\n".join(f"{title}\n{text[:700]}" for title, text in failures)
+          print(f"::error title={len(failures)} failing tests::{escape(summary[:60000])}")
+          for title, text in failures[:8]:
+              print(f"::error title={title}::{escape(text[:1500])}")

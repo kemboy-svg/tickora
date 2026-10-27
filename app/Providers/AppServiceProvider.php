@@ -44,9 +44,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
-        // Fail loudly in development and tests on lazy loading, unknown
-        // attributes and missing attributes, instead of silently in production.
-        Model::shouldBeStrict(! app()->isProduction());
+        // Fail loudly in development and tests on N+1 lazy loading and on
+        // writes to attributes that are not fillable, instead of silently.
+        Model::preventLazyLoading(! app()->isProduction());
+        Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),

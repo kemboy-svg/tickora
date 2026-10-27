@@ -100,12 +100,11 @@ class EventController extends Controller
      */
     private function categories(): array
     {
-        return Category::query()
+        return array_values(Category::query()
             ->orderBy('sort_order')
             ->get()
             ->map(fn (Category $category): array => ['name' => $category->name, 'slug' => $category->slug])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
