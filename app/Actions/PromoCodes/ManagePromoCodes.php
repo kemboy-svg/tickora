@@ -43,7 +43,7 @@ class ManagePromoCodes
             throw ValidationException::withMessages(['code' => 'You already have a promo code called '.$code.'.']);
         }
 
-        $currency = $event?->currency ?? $organizer->default_currency;
+        $currency = $event->currency ?? $organizer->default_currency;
 
         if ($data['discount_type'] === 'percent') {
             $bps = (int) round((float) $data['percent'] * 100);
