@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonInterface|null $verified_at
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
+ * @property-read int|null $events_count
  */
 #[Fillable(['name', 'slug', 'description', 'country_code', 'default_currency', 'support_email'])]
 class Organizer extends Model

@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $sort_order
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
+ * @property-read int|null $events_count
  */
 #[Fillable(['name', 'slug', 'sort_order'])]
 class Category extends Model

@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\MembershipStatus;
+use App\Enums\Permission;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +45,27 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'nav' => fn (): array => $this->navigation($request),
+        ];
+    }
+
+    /**
+     * Which areas the signed-in user can reach, for the sidebar.
+     *
+     * @return array{organizer: bool, moderation: bool, verification: bool}
+     */
+    private function navigation(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            return ['organizer' => false, 'moderation' => false, 'verification' => false];
+        }
+
+        return [
+            'organizer' => $user->organizerMemberships()->where('status', MembershipStatus::Active)->exists(),
+            'moderation' => $user->hasPlatformPermission(Permission::EventsModerate),
+            'verification' => $user->hasPlatformPermission(Permission::OrganizersVerify),
         ];
     }
 }

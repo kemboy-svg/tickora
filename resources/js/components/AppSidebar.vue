@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import {
+    CalendarPlus,
+    ClipboardCheck,
+    Globe,
+    LayoutGrid,
+    Store,
+    Ticket,
+} from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import WorkspaceSwitcher from '@/components/organizer/WorkspaceSwitcher.vue';
 import {
     Sidebar,
     SidebarContent,
@@ -14,28 +23,52 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+const page = usePage();
+const nav = computed(() => page.props.nav);
+
+const mainNavItems = computed<NavItem[]>(() => [
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { title: 'Explore events', href: '/events', icon: Ticket },
+]);
+
+const organizerNavItems = computed<NavItem[]>(() =>
+    nav.value?.organizer
+        ? [
+              { title: 'My events', href: '/organizer/events', icon: Ticket },
+              {
+                  title: 'Create event',
+                  href: '/organizer/events/create',
+                  icon: CalendarPlus,
+              },
+          ]
+        : [
+              {
+                  title: 'Become an organiser',
+                  href: '/organizer/onboarding',
+                  icon: Store,
+              },
+          ],
+);
+
+const adminNavItems = computed<NavItem[]>(() => [
+    ...(nav.value?.moderation
+        ? [
+              {
+                  title: 'Event review',
+                  href: '/admin/events',
+                  icon: ClipboardCheck,
+              },
+          ]
+        : []),
+    ...(nav.value?.verification
+        ? [{ title: 'Organisers', href: '/admin/organizers', icon: Store }]
+        : []),
+]);
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
+    { title: 'Public site', href: '/', icon: Globe },
 ];
 </script>
 
@@ -45,7 +78,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link href="/dashboard">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -54,7 +87,14 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="mainNavItems" label="Tickora" />
+            <WorkspaceSwitcher />
+            <NavMain :items="organizerNavItems" label="Organiser" />
+            <NavMain
+                v-if="adminNavItems.length"
+                :items="adminNavItems"
+                label="Platform"
+            />
         </SidebarContent>
 
         <SidebarFooter>
