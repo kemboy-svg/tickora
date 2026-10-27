@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use App\Casts\AsMoney;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * One ticket type on an order, with price and name snapshots. Currency is
- * the order's, so the Money casts read it through the parent.
+ * One ticket type on an order, with price and name snapshots. Amounts are
+ * in the order's currency, which lineTotal() takes from the caller.
  */
 class OrderItem extends Model
 {

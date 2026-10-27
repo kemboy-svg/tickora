@@ -239,7 +239,9 @@ final readonly class Money implements JsonSerializable, Stringable
         $negative = str_starts_with($decimal, '-');
         $decimal = ltrim($decimal, '-');
 
-        [$whole, $fraction] = array_pad(explode('.', $decimal, 2), 2, null);
+        $parts = explode('.', $decimal, 2);
+        $whole = $parts[0];
+        $fraction = $parts[1] ?? null;
         $grouped = strrev(implode(',', str_split(strrev($whole), 3)));
 
         return $this->currency.' '.($negative ? '-' : '').$grouped.($fraction !== null ? '.'.$fraction : '');

@@ -9,9 +9,42 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tickora
+          POSTGRES_PASSWORD: tickora
+          POSTGRES_DB: tickora_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tickora -d tickora_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: tickora_test
+      DB_USERNAME: tickora
+      DB_PASSWORD: tickora
+      # The test suite uses array cache and sync queues, so Redis is not
+      # needed here; setup still must not try to reach it.
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
 
     steps:
       - name: Checkout code
@@ -23,6 +56,7 @@ jobs:
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.3'
+          extensions: pdo_pgsql, intl
           tools: composer:v2
           coverage: none
 

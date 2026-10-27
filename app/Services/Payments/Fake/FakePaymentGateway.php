@@ -180,7 +180,7 @@ final class FakePaymentGateway implements PaymentGateway
             throw PaymentProviderException::notRefundable('the refund amount must be positive.');
         }
 
-        if ($record['refunded'] + $request->amount->amount > $record['amount']) {
+        if ($record['amount'] < $record['refunded'] + $request->amount->amount) {
             throw PaymentProviderException::notRefundable('the refund exceeds the amount still refundable.');
         }
 

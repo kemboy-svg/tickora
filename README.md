@@ -1,27 +1,77 @@
-# Laravel + Vue Starter Kit
+# Tickora
 
-## Introduction
+**Every Event. One Ticket.** A multi-organiser event ticketing marketplace: customers discover events and buy tickets, organisers publish events and manage sales, gate staff scan QR codes, and platform admins run trust, payments and payouts.
 
-Our Vue starter kit provides a robust, modern starting point for building Laravel applications with a Vue frontend using [Inertia](https://inertiajs.com).
+Laravel 13 · PHP 8.3+ · Vue 3 · Inertia · TypeScript · Tailwind CSS · PostgreSQL · Redis
 
-Inertia allows you to build modern, single-page Vue applications using classic server-side routing and controllers. This lets you enjoy the frontend power of Vue combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+## Getting started
 
-This Vue starter kit utilizes Vue 3 and the Composition API, TypeScript, Tailwind, and the [shadcn-vue](https://www.shadcn-vue.com) component library.
+Requirements: PHP 8.3+ with `pdo_pgsql` and `intl`, Composer, Node 22, PostgreSQL 16, Redis.
 
-## Official Documentation
+```bash
+createuser tickora --pwprompt          # any local password; put it in .env
+createdb -O tickora tickora
+createdb -O tickora tickora_test       # used by the test suite
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+composer setup                         # install, .env, key, migrate, build
+php artisan db:seed                    # local demo data (never in production)
+composer dev                           # app, queue worker, logs and Vite
+```
 
-## Contributing
+Seeded accounts (password `password`):
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Email | Role |
+| --- | --- |
+| `admin@tickora.test` | Platform admin |
+| `finance@tickora.test` | Platform finance |
+| `kavish@kazproductions.test` | Owner, Kaz Productions (MUR) |
+| `nadia@kazproductions.test` | Manager, Kaz Productions |
+| `priya@kazproductions.test` | Gate staff, assigned to *Sega Nights* |
+| `wanjiru@nairobilive.test` | Owner, Nairobi Live (KES) |
+| `amara@example.test` | Customer |
 
-All contributions to the Starter Kits from now on should be made through [Maestro](https://github.com/laravel/maestro).
+## Checks
 
-## Code of Conduct
+```bash
+composer test       # Pint, PHPStan (level 7) and the PHPUnit suite on PostgreSQL
+composer ci:check   # the above plus frontend lint and type-check, as CI runs it
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## How the code is organised
 
-## License
+A modular monolith: one Laravel app, one PostgreSQL database, business rules in actions and domain services rather than controllers.
 
-The Laravel + Vue starter kit is open-sourced software licensed under the MIT license.
+| Where | What |
+| --- | --- |
+| `app/Enums` | Statuses with explicit state machines (`canTransitionTo`), organiser and platform roles, permissions |
+| `app/Support/Money.php` | Integer minor units + ISO 4217 code. No floats; half-away-from-zero rounding; lossless `allocate()` |
+| `app/Support/TicketToken.php` | 256-bit QR tokens. Only the SHA-256 hash is stored |
+| `app/Contracts/Payments` | `PaymentGateway`: the only way code talks to a payment provider |
+| `app/Services/Payments/Fake` | Sandbox provider with idempotent sessions and HMAC-signed webhooks; refuses to run in production |
+| `app/Models/Concerns` | `HasPublicId` (ULIDs in URLs, never internal IDs) and `BelongsToOrganizer` (`visibleTo()` tenant scope) |
+| `app/Policies` | All authorisation, always scoped to the resource's own organiser |
+| `app/Actions` | Team, staff-assignment and admin actions; each authorises and writes the audit trail |
+| `app/Services/Audit` | `AuditLogger`, which scrubs secrets from metadata |
+
+### Rules worth knowing
+
+- **Money** is always `*_minor` integer columns plus a `currency` column. One currency per event, and therefore per order.
+- **Tenancy**: organiser-side queries go through `Model::visibleTo($user)`, and every action is authorised by a policy. A role in one organiser grants nothing in another.
+- **Gate staff** see and scan only events they are individually assigned to. Removing a member revokes their assignments.
+- **Publishing** is two steps: organisers submit for review, platform moderators publish, and only for verified organisers.
+- **Refunds** are requested by one person and approved by another, from platform finance.
+- **The database backs the rules up**: CHECK constraints on statuses, amounts and capacity; one active owner per organiser; an append-only `ledger_entries` table; immutable `audit_logs`; unique webhook event IDs.
+- **Privileged areas** use the `two-factor` route middleware. Suspended users are signed out on their next request.
+
+## Status
+
+Phase 1 (foundation) is in place: schema, roles, policies, audit trail, payment contract and CI. Next, per the implementation plan:
+
+2. Organiser onboarding, event CRUD and review, ticket types, public discovery
+3. Inventory reservations with row locking, checkout and pricing snapshots, expiry job
+4. A real payment provider adapter, signed webhook endpoint, reconciliation and refunds
+5. Ticket issuance, email/PDF delivery and the atomic check-in API
+6. Organiser dashboards, reports, attendee export and the admin console
+7. Load and security testing, monitoring, backups and launch runbooks
+
+Payment provider choice and onboarding depend on the platform's legal entity, countries and settlement currencies. Confirm these before committing to a provider or a launch date.
