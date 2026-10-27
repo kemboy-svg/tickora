@@ -46,7 +46,7 @@ class PaymentGatewayManager
     {
         $providers = $this->config->get('tickora.payments.providers', []);
 
-        return is_array($providers) ? array_values(array_map('strval', array_keys($providers))) : [];
+        return is_array($providers) ? array_map('strval', array_keys($providers)) : [];
     }
 
     private function make(string $name): PaymentGateway

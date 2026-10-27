@@ -58,7 +58,7 @@ class AuditLogger
         $log->actor_user_id = $actor?->id;
         $log->actor_type = $actor === null && $actorType === self::ACTOR_USER ? self::ACTOR_SYSTEM : $actorType;
         $log->action = $action;
-        $log->organizer_id = $organizer?->id ?? $this->organizerIdOf($subject);
+        $log->organizer_id = $organizer !== null ? $organizer->id : $this->organizerIdOf($subject);
         $log->metadata = $metadata === [] ? null : $this->scrub($metadata);
 
         if ($subject !== null) {
@@ -139,8 +139,6 @@ class AuditLogger
             return null;
         }
 
-        $request = $this->app->make('request');
-
-        return $request instanceof Request ? $request : null;
+        return $this->app->make(Request::class);
     }
 }

@@ -21,7 +21,7 @@ class EventFactory extends Factory
      */
     public function definition(): array
     {
-        $title = Str::title(fake()->unique()->words(3, true));
+        $title = Str::title(implode(' ', fake()->unique()->words(3)));
         $startsAt = now()->addDays(fake()->numberBetween(7, 60))->setTime(15, 0);
 
         return [

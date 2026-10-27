@@ -13,7 +13,7 @@ use InvalidArgumentException;
  *
  *   'total' => AsMoney::class.':total_minor,currency'
  *
- * @implements CastsAttributes<Money|null, Money|null>
+ * @implements CastsAttributes<Money|null, mixed>
  */
 class AsMoney implements CastsAttributes
 {
