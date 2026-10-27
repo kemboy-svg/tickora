@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Contracts\Payments\PaymentGateway;
+use App\Services\Payments\PaymentGatewayManager;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +19,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(PaymentGatewayManager::class);
+
+        // The gateway for new checkouts. Webhooks resolve their adapter by
+        // provider name through the manager instead.
+        $this->app->bind(
+            PaymentGateway::class,
+            fn (Application $app): PaymentGateway => $app->make(PaymentGatewayManager::class)->driver(),
+        );
     }
 
     /**
@@ -32,6 +43,10 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Fail loudly in development and tests on lazy loading, unknown
+        // attributes and missing attributes, instead of silently in production.
+        Model::shouldBeStrict(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
