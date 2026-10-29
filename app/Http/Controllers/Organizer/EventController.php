@@ -13,6 +13,7 @@ use App\Http\Requests\Organizer\EventRequest;
 use App\Models\Category;
 use App\Models\Event;
 use App\Support\Currency;
+use App\Support\LocalTime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -61,7 +62,7 @@ class EventController extends Controller
             'defaults' => [
                 'currency' => $organizer->default_currency,
                 'country_code' => $organizer->country_code,
-                'timezone' => $this->defaultTimezone($organizer->country_code),
+                'timezone' => LocalTime::defaultZoneFor($organizer->country_code),
             ],
         ]);
     }
@@ -163,12 +164,5 @@ class EventController extends Controller
                 'max_kb' => EventRequest::MAX_IMAGE_KB,
             ],
         ];
-    }
-
-    private function defaultTimezone(string $countryCode): string
-    {
-        $zones = \DateTimeZone::listIdentifiers(\DateTimeZone::PER_COUNTRY, strtoupper($countryCode));
-
-        return $zones[0] ?? 'UTC';
     }
 }

@@ -191,6 +191,7 @@ export type Workspace = {
 
 export type NavFlags = {
     organizer: boolean;
+    platform: boolean;
     moderation: boolean;
     verification: boolean;
 };
@@ -242,4 +243,38 @@ export type PromoCodeRow = {
     max_redemptions: number | null;
     max_per_customer: number | null;
     is_active: boolean;
+};
+
+export type CurrencyTotals = {
+    currency: string;
+    ticket_sales: Money;
+    gross: Money;
+    fees: Money;
+    refunded: Money;
+    orders: number;
+};
+
+export type DailyTickets = {
+    date: string;
+    label: string;
+    tickets: number;
+    orders: number;
+};
+
+export type CustomerOrder = {
+    reference: string;
+    status: string;
+    status_label: string;
+    tickets: number;
+    total: Money;
+    paid_label: string | null;
+    checkout_id: string | null;
+    event: {
+        title: string;
+        slug: string;
+        date_label: string | null;
+        venue: string | null;
+        city: string | null;
+        cover_url: string | null;
+    };
 };

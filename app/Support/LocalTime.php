@@ -37,6 +37,16 @@ final class LocalTime
         return $value;
     }
 
+    /**
+     * The first IANA zone of a country ("MU" → Indian/Mauritius), or UTC.
+     */
+    public static function defaultZoneFor(string $countryCode): string
+    {
+        $zones = \DateTimeZone::listIdentifiers(\DateTimeZone::PER_COUNTRY, strtoupper($countryCode));
+
+        return $zones[0] ?? 'UTC';
+    }
+
     public static function toUtc(?string $local, string $timezone): ?CarbonImmutable
     {
         if ($local === null || $local === '') {

@@ -7,11 +7,14 @@ use App\Enums\OrganizerRole;
 use App\Enums\PlatformRole;
 use App\Models\Category;
 use App\Models\Event;
+use App\Models\Order;
 use App\Models\Organizer;
+use App\Models\TicketType;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SeederTest extends TestCase
@@ -44,6 +47,15 @@ class SeederTest extends TestCase
         $jazz = Event::query()->where('slug', 'afro-jazz-sessions')->firstOrFail();
         $this->assertSame('KES', $jazz->currency);
         $this->assertFalse($owner->can('view', $jazz), 'organisers are isolated in seed data too');
+
+        // Demo orders add up exactly to each ticket type's sold count.
+        foreach (TicketType::query()->get() as $type) {
+            $inOrders = (int) DB::table('order_items')->where('ticket_type_id', $type->id)->sum('quantity');
+            $this->assertSame($type->quantity_sold, $inOrders, "{$type->name} sold count matches its orders");
+        }
+
+        $amara = User::query()->where('email', 'amara@example.test')->firstOrFail();
+        $this->assertGreaterThan(0, Order::query()->where('user_id', $amara->id)->count());
     }
 
     public function test_categories_can_be_seeded_repeatedly(): void

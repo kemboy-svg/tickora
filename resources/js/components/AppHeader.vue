@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from '@lucide/vue';
+import { Globe, LayoutGrid, Menu, Search, Ticket } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
@@ -55,23 +55,15 @@ const activeItemStyles =
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'My tickets',
         href: dashboard(),
         icon: LayoutGrid,
     },
 ];
 
 const rightNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
+    { title: 'Explore events', href: '/events', icon: Ticket },
+    { title: 'Public site', href: '/', icon: Globe },
 ];
 </script>
 
@@ -129,8 +121,6 @@ const rightNavItems: NavItem[] = [
                                         v-for="item in rightNavItems"
                                         :key="item.title"
                                         :href="toUrl(item.href)"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
                                         class="flex items-center space-x-2 text-sm font-medium"
                                     >
                                         <component
@@ -214,11 +204,7 @@ const rightNavItems: NavItem[] = [
                                                 as-child
                                                 class="group h-9 w-9 cursor-pointer"
                                             >
-                                                <a
-                                                    :href="toUrl(item.href)"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
+                                                <a :href="toUrl(item.href)">
                                                     <span class="sr-only">{{
                                                         item.title
                                                     }}</span>

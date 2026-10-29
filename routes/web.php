@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Public\EventController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\OrganizerController;
@@ -16,7 +17,7 @@ Route::get('organizers/{organizer:slug}', [OrganizerController::class, 'show'])-
 // --- Signed in -----------------------------------------------------------
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::post('checkout', [CheckoutController::class, 'store'])
         ->middleware('throttle:20,1')

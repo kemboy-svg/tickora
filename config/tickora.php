@@ -39,6 +39,25 @@ return [
     // Upper bound on tickets in one order, across all ticket types.
     'max_tickets_per_order' => (int) env('TICKORA_MAX_TICKETS_PER_ORDER', 20),
 
+    // Calendar days on the platform dashboard are counted in this zone.
+    'reporting_timezone' => env('TICKORA_REPORTING_TIMEZONE', 'Indian/Mauritius'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Two-factor authentication for privileged areas
+    |--------------------------------------------------------------------------
+    |
+    | When true, the admin area (and other routes using the "two-factor"
+    | middleware) is closed until the user has confirmed two-factor
+    | authentication. Always enforced in production; off by default
+    | elsewhere so local development does not need an authenticator app.
+    |
+    */
+
+    'require_two_factor' => env('APP_ENV') === 'production'
+        ? true
+        : (bool) env('TICKORA_REQUIRE_TWO_FACTOR', false),
+
     /*
     |--------------------------------------------------------------------------
     | Event images

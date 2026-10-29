@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Organizer\DashboardController;
 use App\Http\Controllers\Organizer\EventController;
 use App\Http\Controllers\Organizer\EventImageController;
 use App\Http\Controllers\Organizer\OnboardingController;
@@ -31,7 +32,8 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->name('organizer.')
         ->name('onboarding.store');
 
     Route::middleware(EnsureOrganizerWorkspace::class)->group(function () {
-        Route::redirect('/', '/organizer/events')->name('home');
+        Route::redirect('/', '/organizer/dashboard')->name('home');
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::post('switch', SwitchWorkspaceController::class)->name('switch');
 
         Route::get('events', [EventController::class, 'index'])->name('events.index');

@@ -2,7 +2,9 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     CalendarPlus,
+    ChartColumn,
     ClipboardCheck,
+    Gauge,
     Globe,
     LayoutGrid,
     Store,
@@ -30,13 +32,24 @@ const page = usePage();
 const nav = computed(() => page.props.nav);
 
 const mainNavItems = computed<NavItem[]>(() => [
-    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { title: 'My tickets', href: '/dashboard', icon: LayoutGrid },
     { title: 'Explore events', href: '/events', icon: Ticket },
 ]);
+
+const workspaceRole = computed(() => page.props.workspace?.current.role);
 
 const organizerNavItems = computed<NavItem[]>(() =>
     nav.value?.organizer
         ? [
+              ...(workspaceRole.value && workspaceRole.value !== 'staff'
+                  ? [
+                        {
+                            title: 'Overview',
+                            href: '/organizer/dashboard',
+                            icon: ChartColumn,
+                        },
+                    ]
+                  : []),
               { title: 'My events', href: '/organizer/events', icon: Ticket },
               {
                   title: 'Promo codes',
@@ -59,6 +72,9 @@ const organizerNavItems = computed<NavItem[]>(() =>
 );
 
 const adminNavItems = computed<NavItem[]>(() => [
+    ...(nav.value?.platform
+        ? [{ title: 'Overview', href: '/admin', icon: Gauge }]
+        : []),
     ...(nav.value?.moderation
         ? [
               {

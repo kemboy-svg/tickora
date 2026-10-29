@@ -158,6 +158,10 @@ class DatabaseSeeder extends Seeder
         $assignment->user_id = $staff->id;
         $assignment->assigned_by = $owner->id;
         $assignment->save();
+
+        // --- Demo sales ---------------------------------------------------
+        // Paid orders behind the sold counts above, so dashboards have data.
+        $this->call(DemoSalesSeeder::class);
     }
 
     private function user(string $name, string $email): User
@@ -187,9 +191,9 @@ class DatabaseSeeder extends Seeder
             'category_id' => $category->id,
             'timezone' => $venue->timezone,
             'status' => $status,
-            'submitted_at' => $published ? now()->subDays(10) : null,
-            'published_at' => $published ? now()->subDays(9) : null,
-            'sales_starts_at' => now()->subDays(9),
+            'submitted_at' => $published ? now()->subDays(36) : null,
+            'published_at' => $published ? now()->subDays(35) : null,
+            'sales_starts_at' => now()->subDays(35),
             'sales_ends_at' => null,
         ], $attributes));
     }

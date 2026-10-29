@@ -33,6 +33,7 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="FAKE_PAYMENTS_WEBHOOK_SECRET" value="testing-webhook-secret"/>
         <env name="TICKORA_PAYMENT_PROVIDER" value="fake"/>
+        <env name="TICKORA_REQUIRE_TWO_FACTOR" value="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

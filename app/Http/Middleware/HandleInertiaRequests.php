@@ -52,18 +52,19 @@ class HandleInertiaRequests extends Middleware
     /**
      * Which areas the signed-in user can reach, for the sidebar.
      *
-     * @return array{organizer: bool, moderation: bool, verification: bool}
+     * @return array{organizer: bool, platform: bool, moderation: bool, verification: bool}
      */
     private function navigation(Request $request): array
     {
         $user = $request->user();
 
         if (! $user instanceof User) {
-            return ['organizer' => false, 'moderation' => false, 'verification' => false];
+            return ['organizer' => false, 'platform' => false, 'moderation' => false, 'verification' => false];
         }
 
         return [
             'organizer' => $user->organizerMemberships()->where('status', MembershipStatus::Active)->exists(),
+            'platform' => $user->isActive() && $user->isPlatformStaff(),
             'moderation' => $user->hasPlatformPermission(Permission::EventsModerate),
             'verification' => $user->hasPlatformPermission(Permission::OrganizersVerify),
         ];

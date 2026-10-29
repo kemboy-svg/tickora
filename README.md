@@ -80,6 +80,8 @@ Next, per the implementation plan:
 6. Organiser dashboards, reports, attendee export and the admin console
 7. Load and security testing, monitoring, backups and launch runbooks
 
-The admin area (`/admin/events`, `/admin/organizers`) requires two-factor authentication: sign in as `admin@tickora.test` and enable it under Settings → Security first.
+**Dashboards.** `/dashboard` shows a customer's tickets, holds and orders; `/organizer/dashboard` shows the current organiser's sales, tickets per day, upcoming events and recent orders (owners and managers); `/admin` is the platform overview for staff (sales and fees per currency, review and verification queues, top organisers). Figures come straight from paid orders. The local seed adds demo paid orders that match the seeded sold counts, so the dashboards have data: sign in as `admin@tickora.test`, `kavish@kazproductions.test` (organiser) or `amara@example.test` (customer); every seeded password is `password`.
+
+**Admin and two-factor.** The admin area (`/admin`, `/admin/events`, `/admin/organizers`) requires two-factor authentication in production. Locally it is off by default (`TICKORA_REQUIRE_TWO_FACTOR=false`) so you can open the admin pages straight away; set it to `true` to test the production behaviour, where admins without two-factor are sent to Settings → Security with an explanation.
 
 Payment provider choice and onboarding depend on the platform's legal entity, countries and settlement currencies. Confirm these before committing to a provider or a launch date.
