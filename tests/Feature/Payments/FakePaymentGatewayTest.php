@@ -48,7 +48,8 @@ class FakePaymentGatewayTest extends TestCase
         $this->assertSame($first->providerPaymentId, $again->providerPaymentId);
         $this->assertNotSame($first->providerPaymentId, $other->providerPaymentId);
         $this->assertSame(PaymentStatus::Created, $first->status);
-        $this->assertStringContainsString('fake_payment='.$first->providerPaymentId, $first->redirectUrl);
+        // Customers are sent to the sandbox's hosted payment screen.
+        $this->assertStringEndsWith('/sandbox/payments/'.$first->providerPaymentId, $first->redirectUrl);
     }
 
     public function test_unsupported_currencies_are_refused(): void

@@ -22,6 +22,14 @@ final readonly class TicketToken
     }
 
     /**
+     * Rebuild from a stored raw token; null if it is malformed.
+     */
+    public static function fromRaw(string $raw): ?self
+    {
+        return preg_match('/^[A-Za-z0-9_-]{43}$/', $raw) === 1 ? new self($raw) : null;
+    }
+
+    /**
      * Rebuild from a scanned QR payload; null if it is not a Tickora payload.
      */
     public static function fromPayload(string $payload): ?self

@@ -223,8 +223,9 @@ class CheckoutFlowTest extends TestCase
         // A later price edit must not change what this customer pays.
         $this->regular->forceFill(['unit_amount_minor' => 99999])->save();
 
+        // Confirming goes straight on to the payment provider's page.
         $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm")
-            ->assertRedirect("/checkout/{$checkout->public_id}");
+            ->assertRedirectContains('/sandbox/payments/fake_pay_');
 
         $order = Order::query()->where('checkout_id', $checkout->id)->firstOrFail();
 

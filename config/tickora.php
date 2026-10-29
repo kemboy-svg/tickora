@@ -110,8 +110,13 @@ return [
 
         'providers' => [
             'fake' => [
-                'webhook_secret' => env('FAKE_PAYMENTS_WEBHOOK_SECRET'),
+                // Falls back to a secret derived from APP_KEY so the sandbox
+                // works out of the box locally. Never used in production.
+                'webhook_secret' => env('FAKE_PAYMENTS_WEBHOOK_SECRET')
+                    ?: hash('sha256', 'tickora-fake-webhooks|'.env('APP_KEY')),
                 'webhook_tolerance_seconds' => 300,
+                // Send customers to the built-in sandbox payment screen.
+                'hosted_page' => true,
                 'currencies' => ['MUR', 'KES', 'ZAR', 'USD', 'EUR'],
             ],
         ],

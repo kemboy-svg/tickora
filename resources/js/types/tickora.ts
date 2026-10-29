@@ -230,7 +230,14 @@ export type CheckoutSummary = {
     tax: Money;
     total: Money;
     promo_code: string | null;
-    order: { reference: string; status: string; status_label: string } | null;
+    order: {
+        id: string;
+        reference: string;
+        status: string;
+        status_label: string;
+        payment_declined: boolean;
+        refunded: boolean;
+    } | null;
 };
 
 export type PromoCodeRow = {
@@ -262,6 +269,7 @@ export type DailyTickets = {
 };
 
 export type CustomerOrder = {
+    id: string;
     reference: string;
     status: string;
     status_label: string;

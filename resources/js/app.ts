@@ -23,6 +23,9 @@ void createInertiaApp({
             case name.startsWith('public/'):
             case name.startsWith('checkout/'):
                 return signedIn ? AppLayout : PublicLayout;
+            case name.startsWith('sandbox/'):
+                // Stands in for a payment provider's own page: no app chrome.
+                return undefined;
             case name === 'auth/ConfirmPassword':
                 return signedIn ? AppCardLayout : AuthLayout;
             case name.startsWith('auth/'):

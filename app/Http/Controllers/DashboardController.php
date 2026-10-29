@@ -88,6 +88,7 @@ class DashboardController extends Controller
         $checkout = $order->checkout;
 
         return [
+            'id' => $order->public_id,
             'reference' => $order->reference,
             'status' => $order->status->value,
             'status_label' => $order->status->label(),

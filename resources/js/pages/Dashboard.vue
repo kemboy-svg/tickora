@@ -199,6 +199,16 @@ const statusClass: Record<string, string> = {
                                 class="font-bold text-primary hover:underline"
                                 >Continue to payment →</Link
                             >
+                            <Link
+                                v-else-if="
+                                    ['paid', 'partially_refunded'].includes(
+                                        order.status,
+                                    )
+                                "
+                                :href="`/orders/${order.id}`"
+                                class="font-bold text-primary hover:underline"
+                                >View tickets →</Link
+                            >
                         </span>
                     </div>
                 </article>
@@ -228,7 +238,11 @@ const statusClass: Record<string, string> = {
                             class="border-b last:border-0"
                         >
                             <td class="p-3 font-semibold">
-                                {{ order.event.title }}
+                                <Link
+                                    :href="`/orders/${order.id}`"
+                                    class="hover:underline"
+                                    >{{ order.event.title }}</Link
+                                >
                             </td>
                             <td class="p-3">{{ order.event.date_label }}</td>
                             <td class="p-3 font-mono text-xs">

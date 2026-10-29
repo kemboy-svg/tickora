@@ -55,7 +55,9 @@ class StateMachineTest extends TestCase
         $this->assertFalse(OrderStatus::Paid->canTransitionTo(OrderStatus::PendingPayment));
         $this->assertFalse(OrderStatus::Paid->canTransitionTo(OrderStatus::Cancelled));
         $this->assertFalse(OrderStatus::Refunded->canTransitionTo(OrderStatus::Paid));
-        $this->assertFalse(OrderStatus::Cancelled->canTransitionTo(OrderStatus::Paid));
+        // A late payment can still complete a lapsed order, but nothing else can revive it.
+        $this->assertTrue(OrderStatus::Cancelled->canTransitionTo(OrderStatus::Paid));
+        $this->assertFalse(OrderStatus::Cancelled->canTransitionTo(OrderStatus::PendingPayment));
     }
 
     public function test_event_lifecycle_requires_review_before_publication(): void

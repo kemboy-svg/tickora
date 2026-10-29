@@ -83,6 +83,7 @@ class PaymentGatewayManager
             currencies: is_array($currencies)
                 ? array_values(array_map(fn ($c): string => strtoupper((string) $c), $currencies))
                 : [],
+            hostedPageUrl: ($settings['hosted_page'] ?? false) === true ? url('/sandbox/payments') : null,
         );
     }
 }

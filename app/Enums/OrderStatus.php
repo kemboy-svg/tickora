@@ -23,7 +23,11 @@ enum OrderStatus: string
             self::Paid => [self::PartiallyRefunded, self::Refunded],
             // Further partial refunds keep the order partially refunded.
             self::PartiallyRefunded => [self::PartiallyRefunded, self::Refunded],
-            self::Refunded, self::Cancelled => [],
+            // A payment that succeeds after the hold lapsed (and the unpaid
+            // order was cancelled) still completes if tickets remain;
+            // otherwise it is refunded and the order stays cancelled.
+            self::Cancelled => [self::Paid],
+            self::Refunded => [],
         };
     }
 

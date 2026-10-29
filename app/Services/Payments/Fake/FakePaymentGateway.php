@@ -45,6 +45,7 @@ final class FakePaymentGateway implements PaymentGateway
         private readonly ?string $webhookSecret,
         private readonly int $toleranceSeconds = 300,
         private readonly array $currencies = [],
+        private readonly ?string $hostedPageUrl = null,
     ) {}
 
     public function name(): string
@@ -78,11 +79,22 @@ final class FakePaymentGateway implements PaymentGateway
             $this->save($id, $record);
         }
 
+        $this->cache->put(self::CACHE_PREFIX.'urls:'.$id, [
+            'return' => $request->returnUrl,
+            'cancel' => $request->cancelUrl,
+        ], now()->addDay());
+
+        // With a hosted page configured (the app's sandbox screen), the
+        // customer goes there to "pay", as with a real provider. Without
+        // one, they go straight back to the return URL.
         $separator = str_contains($request->returnUrl, '?') ? '&' : '?';
+        $redirect = $this->hostedPageUrl !== null
+            ? rtrim($this->hostedPageUrl, '/').'/'.$id
+            : $request->returnUrl.$separator.'fake_payment='.$id;
 
         return new CheckoutSession(
             providerPaymentId: $id,
-            redirectUrl: $request->returnUrl.$separator.'fake_payment='.$id,
+            redirectUrl: $redirect,
             status: $this->mapStatus($record),
             rawStatus: $record['status'],
         );
@@ -198,6 +210,30 @@ final class FakePaymentGateway implements PaymentGateway
         $this->cache->put(self::CACHE_PREFIX.'refund:'.$refundId, $refund, now()->addDay());
 
         return $refund;
+    }
+
+    /**
+     * What the hosted sandbox page shows: amount, reference, state and
+     * where to send the customer afterwards.
+     *
+     * @return array{amount: Money, reference: string, status: PaymentStatus, return_url: string, cancel_url: string}|null
+     */
+    public function session(string $providerPaymentId): ?array
+    {
+        $record = $this->load($providerPaymentId);
+        $urls = $this->cache->get(self::CACHE_PREFIX.'urls:'.$providerPaymentId);
+
+        if ($record === null || ! is_array($urls) || ! is_string($urls['return'] ?? null) || ! is_string($urls['cancel'] ?? null)) {
+            return null;
+        }
+
+        return [
+            'amount' => Money::ofMinor($record['amount'], $record['currency']),
+            'reference' => $record['reference'],
+            'status' => $this->mapStatus($record),
+            'return_url' => $urls['return'],
+            'cancel_url' => $urls['cancel'],
+        ];
     }
 
     /**

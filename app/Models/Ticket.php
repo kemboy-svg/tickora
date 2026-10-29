@@ -7,10 +7,12 @@ use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\HasPublicId;
 use App\Support\TicketToken;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * One admission. The QR code carries a random token whose SHA-256 hash is
@@ -28,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $attendee_name
  * @property string|null $attendee_email
  * @property string $qr_token_hash
+ * @property string|null $qr_token_ciphertext
  * @property TicketStatus $status
  * @property CarbonInterface $issued_at
  * @property CarbonInterface|null $checked_in_at
@@ -42,7 +45,7 @@ class Ticket extends Model
     /**
      * @var list<string>
      */
-    protected $hidden = ['qr_token_hash'];
+    protected $hidden = ['qr_token_hash', 'qr_token_ciphertext'];
 
     /**
      * @var array<string, mixed>
@@ -139,10 +142,41 @@ class Ticket extends Model
     public function rotateToken(): TicketToken
     {
         $token = TicketToken::issue();
-        $this->qr_token_hash = $token->hash();
+        $this->useToken($token);
         $this->save();
 
         return $token;
+    }
+
+    /**
+     * Store a token: its hash for scanning, and an encrypted copy so the
+     * holder's ticket page can show the QR code again.
+     */
+    public function useToken(TicketToken $token): void
+    {
+        $this->qr_token_hash = $token->hash();
+        $this->qr_token_ciphertext = Crypt::encryptString($token->raw);
+    }
+
+    /**
+     * The QR payload for the holder's ticket page, or null if it cannot be
+     * recovered (issued before encryption was added, or the key changed).
+     */
+    public function qrPayload(): ?string
+    {
+        if ($this->qr_token_ciphertext === null) {
+            return null;
+        }
+
+        try {
+            $raw = Crypt::decryptString($this->qr_token_ciphertext);
+        } catch (DecryptException) {
+            return null;
+        }
+
+        $token = TicketToken::fromRaw($raw);
+
+        return $token !== null && hash_equals($this->qr_token_hash, $token->hash()) ? $token->payload() : null;
     }
 
     public function transitionTo(TicketStatus $to): void

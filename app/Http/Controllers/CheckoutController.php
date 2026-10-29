@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Actions\Checkout\ConfirmCheckout;
 use App\Actions\Checkout\CreateCheckout;
 use App\Actions\Checkout\ReleaseCheckout;
+use App\Actions\Orders\RefundUnfulfillableOrder;
+use App\Actions\Payments\StartPayment;
 use App\Enums\CheckoutStatus;
 use App\Enums\EventStatus;
+use App\Enums\OrderStatus;
 use App\Models\Checkout;
 use App\Models\Event;
 use App\Models\InventoryReservation;
@@ -19,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
  * The customer's side of buying tickets: hold, review, confirm, release.
@@ -50,11 +54,18 @@ class CheckoutController extends Controller
         return to_route('checkout.show', $checkout);
     }
 
-    public function show(Request $request, Checkout $checkout): Response
+    public function show(Request $request, Checkout $checkout): Response|RedirectResponse
     {
         Gate::forUser($this->customer($request))->authorize('view', $checkout);
 
         $checkout->load(['event.venue', 'reservations' => fn ($q) => $q->orderBy('id'), 'promoCode', 'order']);
+
+        // Back from the payment page with the order paid: show the tickets.
+        if ($checkout->order instanceof Order && $checkout->order->status->wasPaid()) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => "Payment received. You're going!"]);
+
+            return to_route('orders.show', $checkout->order);
+        }
 
         return Inertia::render('checkout/Show', [
             'checkout' => $this->present($checkout),
@@ -79,11 +90,38 @@ class CheckoutController extends Controller
         return to_route('checkout.show', $checkout);
     }
 
-    public function confirm(Request $request, Checkout $checkout, ConfirmCheckout $confirm): RedirectResponse
+    /**
+     * Lock in the order, then go straight to payment (or, for a free
+     * order, straight to the tickets).
+     */
+    public function confirm(Request $request, Checkout $checkout, ConfirmCheckout $confirm, StartPayment $pay): SymfonyResponse
     {
-        $confirm->handle($this->customer($request), $checkout);
+        $customer = $this->customer($request);
+        $confirm->handle($customer, $checkout);
 
-        return to_route('checkout.show', $checkout);
+        return $this->toPayment($customer, $checkout, $pay);
+    }
+
+    /**
+     * Pay for a confirmed order, or try again after a decline.
+     */
+    public function pay(Request $request, Checkout $checkout, StartPayment $pay): SymfonyResponse
+    {
+        return $this->toPayment($this->customer($request), $checkout, $pay);
+    }
+
+    private function toPayment(User $customer, Checkout $checkout, StartPayment $pay): SymfonyResponse
+    {
+        $result = $pay->handle($customer, $checkout);
+
+        if ($result['redirect'] === null) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => "You're going! Your tickets are ready."]);
+
+            return to_route('orders.show', $result['order']);
+        }
+
+        // The provider's page lives outside this app: a full browser visit.
+        return Inertia::location($result['redirect']);
     }
 
     public function destroy(Request $request, Checkout $checkout, ReleaseCheckout $release): RedirectResponse
@@ -141,9 +179,12 @@ class CheckoutController extends Controller
             'total' => $checkout->money('total_minor'),
             'promo_code' => $checkout->promoCode?->code,
             'order' => $order instanceof Order ? [
+                'id' => $order->public_id,
                 'reference' => $order->reference,
                 'status' => $order->status->value,
                 'status_label' => $order->status->label(),
+                'payment_declined' => $order->status === OrderStatus::PaymentFailed,
+                'refunded' => $order->refunds()->where('reason', RefundUnfulfillableOrder::REASON)->exists(),
             ] : null,
         ];
     }

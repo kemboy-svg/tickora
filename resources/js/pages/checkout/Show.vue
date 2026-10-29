@@ -75,6 +75,17 @@ function placeOrder(): void {
     });
 }
 
+const payment = useForm({});
+const paymentError = computed(
+    () => (payment.errors as Record<string, string | undefined>).checkout,
+);
+
+function pay(): void {
+    payment.post(`/checkout/${props.checkout.id}/pay`, {
+        preserveScroll: true,
+    });
+}
+
 const release = useForm({});
 
 function cancel(): void {
@@ -124,7 +135,11 @@ function cancel(): void {
             class="mt-5 flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900"
         >
             <p class="font-extrabold">Your hold ran out</p>
-            <p class="text-sm">
+            <p v-if="checkout.order?.refunded" class="text-sm">
+                Your payment arrived after the tickets had sold out, so we
+                refunded it in full. Sorry about that.
+            </p>
+            <p v-else class="text-sm">
                 The tickets went back on sale. They may still be available —
                 choose them again to start a new checkout.
             </p>
@@ -337,11 +352,40 @@ function cancel(): void {
                         <strong>{{ checkout.order.status_label }}</strong>
                     </p>
                     <p
-                        class="rounded-lg bg-violet-50 p-3 text-sm text-violet-900"
+                        v-if="checkout.order.payment_declined"
+                        role="alert"
+                        class="rounded-lg bg-destructive/10 p-3 text-sm font-semibold text-destructive"
                     >
-                        Online payment is being connected. Your tickets stay
-                        reserved until the timer runs out.
+                        Your payment was declined. No money was taken. Try again
+                        or use another card; your tickets are still held.
                     </p>
+                    <p
+                        v-else
+                        class="rounded-lg bg-violet-50 p-3 text-sm text-violet-900 dark:bg-violet-950/40 dark:text-violet-100"
+                    >
+                        Your tickets stay reserved until the timer runs out.
+                    </p>
+                    <p
+                        v-if="paymentError"
+                        role="alert"
+                        class="rounded-lg bg-destructive/10 p-3 text-sm font-semibold text-destructive"
+                    >
+                        {{ paymentError }}
+                    </p>
+                    <button
+                        type="button"
+                        class="min-h-12 rounded-xl bg-primary font-extrabold text-primary-foreground disabled:opacity-60"
+                        :disabled="payment.processing"
+                        @click="pay"
+                    >
+                        {{
+                            payment.processing
+                                ? 'Opening payment…'
+                                : checkout.order.payment_declined
+                                  ? `Try again · ${checkout.total.formatted}`
+                                  : `Pay ${checkout.total.formatted}`
+                        }}
+                    </button>
                     <button
                         type="button"
                         class="min-h-11 rounded-xl border text-sm font-bold hover:bg-accent disabled:opacity-60"
