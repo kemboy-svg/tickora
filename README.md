@@ -70,15 +70,16 @@ Done:
 1. **Foundation**: schema, roles, policies, audit trail, payment contract and CI.
 2. **Organisers, events and discovery**: organiser onboarding and workspace switching, event drafts with timezone-aware scheduling, ticket types, submit → review → publish, cancellation, the admin review queue and organiser verification, and the public homepage, discovery filters, event pages and organiser profiles.
 3. **Checkout and inventory**: tickets are held for 10 minutes by locking the ticket type rows and recounting availability in the same transaction, so two buyers can never get the last ticket (proved by a test that races separate processes against PostgreSQL). Server-side pricing with a customer booking fee, optional tax on the fee and promo codes; confirming creates a pending order with name and price snapshots and extends the hold to 15 minutes for payment. Expired holds stop counting immediately and are swept every minute by `php artisan tickora:expire-holds` (run `php artisan schedule:work` locally). Organisers manage promo codes under **Promo codes**.
+4. **Payment and tickets (sandbox)**: confirming a checkout goes to the payment provider; the signed webhook is verified, logged once per event and re-confirmed with the provider before the order is completed. Completion is idempotent and issues one ticket per seat with its own QR code, records promo use, credits the organiser's ledger and emails a confirmation. Declined cards can retry while the hold lasts; a payment that arrives after the tickets sold out is refunded automatically. Locally the sandbox provider shows its own test payment screen (Pay / Decline); a real provider adapter plugs in behind the same interface.
 
 Also done: **event photos**: up to 8 photos per event, added while creating the event or later on its edit page; the first is the cover on listings and the event page, with a gallery for the rest. Uploads are checked, re-encoded (stripping camera metadata such as GPS location) and scaled to at most 2400 px. Run `php artisan storage:link` once so the `public` disk is served; set `TICKORA_MEDIA_DISK` to an S3-compatible disk in production.
 
 Next, per the implementation plan:
 
-4. A real payment provider adapter, signed webhook endpoint, reconciliation and refunds
-5. Ticket issuance, email/PDF delivery and the atomic check-in API
-6. Organiser dashboards, reports, attendee export and the admin console
-7. Load and security testing, monitoring, backups and launch runbooks
+5. A real payment provider adapter, daily reconciliation, customer refund requests and approvals
+6. Ticket PDFs and the atomic check-in (scanner) API
+7. Attendee lists and export, payouts, and the rest of the admin console
+8. Load and security testing, monitoring, backups and launch runbooks
 
 **Dashboards.** `/dashboard` shows a customer's tickets, holds and orders; `/organizer/dashboard` shows the current organiser's sales, tickets per day, upcoming events and recent orders (owners and managers); `/admin` is the platform overview for staff (sales and fees per currency, review and verification queues, top organisers). Figures come straight from paid orders. The local seed adds demo paid orders that match the seeded sold counts, so the dashboards have data: sign in as `admin@tickora.test`, `kavish@kazproductions.test` (organiser) or `amara@example.test` (customer); every seeded password is `password`.
 
