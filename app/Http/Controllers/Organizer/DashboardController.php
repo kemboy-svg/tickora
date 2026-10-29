@@ -122,7 +122,8 @@ class DashboardController extends Controller
 
         $almostGone = TicketType::query()
             ->whereHas('event', fn ($q) => $q->where('organizer_id', $organizerId)->where('status', EventStatus::Published)->where('ends_at', '>', now()))
-            ->whereRaw('quantity_total > 0 and quantity_sold::float / quantity_total >= 0.9 and quantity_sold < quantity_total')
+            // At least 90% sold, in integer arithmetic so it works on every database.
+            ->whereRaw('quantity_total > 0 and quantity_sold * 10 >= quantity_total * 9 and quantity_sold < quantity_total')
             ->count();
 
         if ($almostGone > 0) {

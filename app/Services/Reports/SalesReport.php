@@ -5,6 +5,7 @@ namespace App\Services\Reports;
 use App\Enums\OrderStatus;
 use App\Models\Organizer;
 use App\Support\Money;
+use App\Support\Sql;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -94,10 +95,12 @@ class SalesReport
         $today = CarbonImmutable::now($timezone)->startOfDay();
         $first = $today->subDays($days - 1);
 
+        [$day, $bindings] = Sql::localDate('orders.paid_at', $timezone);
+
         $rows = $this->orders($organizer, $first->utc())
             ->join('order_items', 'order_items.order_id', '=', 'orders.id')
             ->groupBy('day')
-            ->selectRaw("to_char(orders.paid_at at time zone ?, 'YYYY-MM-DD') as day", [$timezone])
+            ->selectRaw("{$day} as day", $bindings)
             ->selectRaw('sum(order_items.quantity) as tickets')
             ->selectRaw('count(distinct orders.id) as orders')
             ->get()

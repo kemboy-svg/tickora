@@ -10,12 +10,14 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
  * The database enforces the invariants that matter most, so a bug in
  * application code fails loudly instead of corrupting money or inventory.
  */
+#[Group('postgres')]
 class SchemaIntegrityTest extends TestCase
 {
     use RefreshDatabase;

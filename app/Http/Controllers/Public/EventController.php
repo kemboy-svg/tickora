@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Presenters\EventPresenter;
 use App\Models\Category;
 use App\Models\Event;
+use App\Support\Sql;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -48,8 +49,9 @@ class EventController extends Controller
         $this->applyFilters($query, $filters);
 
         match ($filters['sort']) {
-            'price_asc' => $query->orderByRaw('min_price_minor asc nulls last')->orderBy('starts_at'),
-            'price_desc' => $query->orderByRaw('min_price_minor desc nulls last')->orderBy('starts_at'),
+            // Events without a price sort last; "is null" works on every database.
+            'price_asc' => $query->orderByRaw('min_price_minor is null')->orderBy('min_price_minor')->orderBy('starts_at'),
+            'price_desc' => $query->orderByRaw('min_price_minor is null')->orderByDesc('min_price_minor')->orderBy('starts_at'),
             'newest' => $query->orderByDesc('published_at'),
             default => $query->orderBy('starts_at'),
         };
@@ -117,10 +119,12 @@ class EventController extends Controller
         if ($filters['q'] !== '') {
             $term = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $filters['q']).'%';
 
+            $like = Sql::like();
+
             $query->where(fn (Builder $q) => $q
-                ->where('title', 'ilike', $term)
-                ->orWhere('summary', 'ilike', $term)
-                ->orWhereHas('venue', fn (Builder $v) => $v->where('name', 'ilike', $term)));
+                ->where('title', $like, $term)
+                ->orWhere('summary', $like, $term)
+                ->orWhereHas('venue', fn (Builder $v) => $v->where('name', $like, $term)));
         }
 
         if ($filters['category'] !== '') {
@@ -128,7 +132,7 @@ class EventController extends Controller
         }
 
         if ($filters['city'] !== '') {
-            $query->whereHas('venue', fn (Builder $v) => $v->where('city', 'ilike', $filters['city']));
+            $query->whereHas('venue', fn (Builder $v) => $v->where('city', Sql::like(), $filters['city']));
         }
 
         if ($filters['when'] !== '') {

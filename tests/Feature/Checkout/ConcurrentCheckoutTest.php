@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Concerns\CreatesTenants;
 use Tests\TestCase;
 use Throwable;
@@ -24,6 +25,7 @@ use Throwable;
  * rows instead of using RefreshDatabase, and truncates every table before
  * and after so the rest of the suite still starts from an empty database.
  */
+#[Group('postgres')]
 class ConcurrentCheckoutTest extends TestCase
 {
     use CreatesTenants;

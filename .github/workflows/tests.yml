@@ -103,22 +103,36 @@ jobs:
           php artisan config:clear --ansi
           php artisan test --log-junit junit.xml
 
+      # Tickora runs on PostgreSQL in production, but local setups often use
+      # SQLite. Everything except the PostgreSQL-specific tests (constraints,
+      # triggers, row locks) must work there too.
+      - name: Tests (SQLite compatibility)
+        if: ${{ !cancelled() }}
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan test --exclude-group=postgres --log-junit junit-sqlite.xml
+
       - name: Report failing tests
-        if: ${{ failure() && hashFiles('junit.xml') != '' }}
+        if: ${{ failure() && hashFiles('junit*.xml') != '' }}
         shell: python3 {0}
         run: |
+          import os
           import xml.etree.ElementTree as ET
 
           def escape(text):
               return text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
 
           failures = []
-          for case in ET.parse("junit.xml").iter("testcase"):
-              for kind in ("failure", "error"):
-                  node = case.find(kind)
-                  if node is not None:
-                      text = (node.text or node.get("message") or "").strip()
-                      failures.append((f"{case.get('class', '')}::{case.get('name', '')}", text))
+          for path, label in (("junit.xml", "PostgreSQL"), ("junit-sqlite.xml", "SQLite")):
+              if not os.path.exists(path):
+                  continue
+              for case in ET.parse(path).iter("testcase"):
+                  for kind in ("failure", "error"):
+                      node = case.find(kind)
+                      if node is not None:
+                          text = (node.text or node.get("message") or "").strip()
+                          failures.append((f"[{label}] {case.get('class', '')}::{case.get('name', '')}", text))
 
           # GitHub keeps only 10 annotations per step: one summary of every
           # failure first, then details for the first few.

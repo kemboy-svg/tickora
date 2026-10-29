@@ -19,6 +19,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Concerns\CreatesTenants;
 use Tests\TestCase;
 
@@ -105,6 +106,7 @@ class TeamManagementTest extends TestCase
         app(AddOrganizerMember::class)->handle($this->ownerOf($organizer), $organizer, User::factory()->create(), OrganizerRole::Owner);
     }
 
+    #[Group('postgres')]
     public function test_the_database_allows_only_one_active_owner(): void
     {
         $organizer = $this->organizer();
