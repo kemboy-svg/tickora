@@ -45,7 +45,8 @@ final class Sql
      * UTC offset: exact for zones without daylight saving (Mauritius,
      * Kenya, South Africa), off by an hour around DST changes elsewhere.
      *
-     * @return array{0: string, 1: list<string>} SQL and its bindings
+     * @param  literal-string  $column
+     * @return array{0: literal-string, 1: list<string>} SQL and its bindings
      */
     public static function localDate(string $column, string $timezone): array
     {
