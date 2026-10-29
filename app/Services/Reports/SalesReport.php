@@ -8,6 +8,7 @@ use App\Support\Money;
 use App\Support\Sql;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -100,7 +101,8 @@ class SalesReport
         $rows = $this->orders($organizer, $first->utc())
             ->join('order_items', 'order_items.order_id', '=', 'orders.id')
             ->groupBy('day')
-            ->selectRaw("{$day} as day", $bindings)
+            ->addSelect(new Expression($day.' as day'))
+            ->addBinding($bindings, 'select')
             ->selectRaw('sum(order_items.quantity) as tickets')
             ->selectRaw('count(distinct orders.id) as orders')
             ->get()

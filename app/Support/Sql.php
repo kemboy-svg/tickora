@@ -29,6 +29,15 @@ final class Sql
     }
 
     /**
+     * Whether ORDER BY ... NULLS LAST is available (PostgreSQL, SQLite
+     * 3.30+; not MySQL).
+     */
+    public static function supportsNullsLast(): bool
+    {
+        return ! in_array(self::driver(), ['mysql', 'mariadb'], true);
+    }
+
+    /**
      * A "YYYY-MM-DD" calendar day of a UTC timestamp column, in a timezone.
      *
      * PostgreSQL converts with the full timezone rules. SQLite and MySQL
@@ -36,7 +45,7 @@ final class Sql
      * UTC offset: exact for zones without daylight saving (Mauritius,
      * Kenya, South Africa), off by an hour around DST changes elsewhere.
      *
-     * @return array{0: string, 1: list<string>} expression and bindings
+     * @return array{0: string, 1: list<string>} SQL and its bindings
      */
     public static function localDate(string $column, string $timezone): array
     {

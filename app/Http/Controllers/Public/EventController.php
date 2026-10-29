@@ -49,9 +49,13 @@ class EventController extends Controller
         $this->applyFilters($query, $filters);
 
         match ($filters['sort']) {
-            // Events without a price sort last; "is null" works on every database.
-            'price_asc' => $query->orderByRaw('min_price_minor is null')->orderBy('min_price_minor')->orderBy('starts_at'),
-            'price_desc' => $query->orderByRaw('min_price_minor is null')->orderByDesc('min_price_minor')->orderBy('starts_at'),
+            // Events without a price sort last.
+            'price_asc' => (Sql::supportsNullsLast()
+                ? $query->orderByRaw('min_price_minor asc nulls last')
+                : $query->orderByRaw('min_price_minor is null')->orderBy('min_price_minor'))->orderBy('starts_at'),
+            'price_desc' => (Sql::supportsNullsLast()
+                ? $query->orderByRaw('min_price_minor desc nulls last')
+                : $query->orderByRaw('min_price_minor is null')->orderByDesc('min_price_minor'))->orderBy('starts_at'),
             'newest' => $query->orderByDesc('published_at'),
             default => $query->orderBy('starts_at'),
         };
