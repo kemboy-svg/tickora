@@ -2,13 +2,14 @@
 import { Head } from '@inertiajs/vue3';
 import EventForm from '@/components/organizer/EventForm.vue';
 import type { EventPayload } from '@/components/organizer/EventForm.vue';
-import type { Category } from '@/types';
+import type { Category, ImageLimits } from '@/types';
 
 const props = defineProps<{
     categories: Category[];
     currencies: string[];
     visibilities: Array<'public' | 'unlisted'>;
     timezones: string[];
+    imageLimits: ImageLimits;
     defaults: { currency: string; country_code: string; timezone: string };
 }>();
 
@@ -43,6 +44,7 @@ const initial: EventPayload = {
         postal_code: null,
         country_code: props.defaults.country_code,
     },
+    images: [],
 };
 </script>
 
@@ -60,7 +62,13 @@ const initial: EventPayload = {
 
         <EventForm
             :initial="initial"
-            :options="{ categories, currencies, visibilities, timezones }"
+            :options="{
+                categories,
+                currencies,
+                visibilities,
+                timezones,
+                imageLimits,
+            }"
             method="post"
             url="/organizer/events"
             submit-label="Save draft"

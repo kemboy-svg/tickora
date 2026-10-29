@@ -5,6 +5,7 @@ namespace App\Http\Presenters;
 use App\Enums\EventStatus;
 use App\Enums\TicketTypeStatus;
 use App\Models\Event;
+use App\Models\EventImage;
 use App\Models\TicketType;
 use App\Support\LocalTime;
 use App\Support\Money;
@@ -16,7 +17,8 @@ use Illuminate\Support\Collection;
  * display-ready values leave the server — never internal IDs, hashes or
  * other organisers' data.
  *
- * Expects ticketTypes, venue, category and organizer to be eager loaded.
+ * Expects ticketTypes, venue, category and organizer to be eager loaded,
+ * and images for detail() and form().
  */
 final class EventPresenter
 {
@@ -35,6 +37,7 @@ final class EventPresenter
             'slug' => $event->slug,
             'title' => $event->title,
             'summary' => $event->summary,
+            'cover_url' => $event->coverUrl(),
             'category' => $event->category->name,
             'category_slug' => $event->category->slug,
             'starts_at' => $event->starts_at->toIso8601String(),
@@ -60,6 +63,7 @@ final class EventPresenter
         return [
             ...self::card($event),
             'description' => $event->description,
+            'images' => $event->images->map(fn (EventImage $image): array => $image->toPublicArray())->values()->all(),
             'timezone' => $event->timezone,
             'timezone_label' => LocalTime::offsetLabel($event->starts_at, $event->timezone),
             'date_label' => LocalTime::display($event->starts_at, $event->timezone, 'l j F Y'),
@@ -164,6 +168,7 @@ final class EventPresenter
                 'postal_code' => $event->venue?->postal_code,
                 'country_code' => $event->venue->country_code ?? $event->organizer->country_code,
             ],
+            'images' => $event->images->map(fn (EventImage $image): array => $image->toPublicArray())->values()->all(),
             'ticket_types' => $event->ticketTypes
                 ->map(fn (TicketType $type): array => [
                     'id' => $type->public_id,

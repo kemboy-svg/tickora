@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
+import ImagePicker from '@/components/organizer/ImagePicker.vue';
+import DateTimeField from '@/components/tickora/DateTimeField.vue';
 import type { EventFormOptions, VenueFormValues } from '@/types';
 
 export type EventPayload = {
@@ -19,6 +21,8 @@ export type EventPayload = {
     refund_policy: string;
     min_age: string;
     venue: VenueFormValues;
+    // Only on create; photos of a saved event are managed separately.
+    images?: File[];
 };
 
 const props = defineProps<{
@@ -41,8 +45,43 @@ const errors = computed(
 const inputClass =
     'min-h-11 w-full rounded-lg border bg-background px-3 text-base disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground';
 
+// Wall-clock arithmetic on "YYYY-MM-DDTHH:MM" strings. Treating them as
+// UTC avoids the browser's own timezone shifting the result.
+function addHours(local: string, hours: number): string {
+    const date = new Date(`${local}:00Z`);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    date.setUTCHours(date.getUTCHours() + hours);
+
+    return date.toISOString().slice(0, 16);
+}
+
+// Picking a start fills in a sensible end (3 hours later) when the end is
+// empty or would come before the start.
+watch(
+    () => form.starts_at,
+    (starts) => {
+        if (!starts || props.scheduleLocked) {
+            return;
+        }
+
+        if (!form.ends_at || form.ends_at <= starts) {
+            form.ends_at = addHours(starts, 3);
+        }
+    },
+);
+
+const hasImagePicker = computed(() => Array.isArray(form.images));
+
 function submit(): void {
-    form.submit(props.method, props.url, { preserveScroll: true });
+    form.submit(props.method, props.url, {
+        preserveScroll: true,
+        // Photos travel as multipart form data.
+        forceFormData: Boolean(form.images?.length),
+    });
 }
 </script>
 
@@ -138,6 +177,24 @@ function submit(): void {
             </div>
         </fieldset>
 
+        <fieldset
+            v-if="hasImagePicker && form.images"
+            class="flex flex-col gap-4 rounded-2xl border bg-card p-6"
+        >
+            <legend class="px-1 text-lg font-extrabold">
+                Photos
+                <span class="text-sm font-normal text-muted-foreground"
+                    >(optional)</span
+                >
+            </legend>
+            <ImagePicker
+                v-model="form.images"
+                :max="options.imageLimits?.max_images ?? 8"
+                :max-kb="options.imageLimits?.max_kb ?? 8192"
+                :errors="errors"
+            />
+        </fieldset>
+
         <fieldset class="flex flex-col gap-4 rounded-2xl border bg-card p-6">
             <legend class="px-1 text-lg font-extrabold">Date and venue</legend>
             <p
@@ -154,25 +211,24 @@ function submit(): void {
                     <label for="starts_at" class="text-sm font-bold"
                         >Starts</label
                     >
-                    <input
+                    <DateTimeField
                         id="starts_at"
                         v-model="form.starts_at"
-                        type="datetime-local"
                         required
                         :disabled="scheduleLocked"
-                        :class="inputClass"
+                        :invalid="Boolean(errors.starts_at)"
                     />
                     <InputError :message="errors.starts_at" />
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <label for="ends_at" class="text-sm font-bold">Ends</label>
-                    <input
+                    <DateTimeField
                         id="ends_at"
                         v-model="form.ends_at"
-                        type="datetime-local"
                         required
                         :disabled="scheduleLocked"
-                        :class="inputClass"
+                        :min="form.starts_at || null"
+                        :invalid="Boolean(errors.ends_at)"
                     />
                     <InputError :message="errors.ends_at" />
                 </div>
@@ -206,12 +262,11 @@ function submit(): void {
                             >(optional)</span
                         ></label
                     >
-                    <input
+                    <DateTimeField
                         id="sales_starts_at"
                         v-model="form.sales_starts_at"
-                        type="datetime-local"
                         :disabled="scheduleLocked"
-                        :class="inputClass"
+                        :invalid="Boolean(errors.sales_starts_at)"
                     />
                     <InputError :message="errors.sales_starts_at" />
                 </div>
@@ -222,12 +277,12 @@ function submit(): void {
                             >(optional)</span
                         ></label
                     >
-                    <input
+                    <DateTimeField
                         id="sales_ends_at"
                         v-model="form.sales_ends_at"
-                        type="datetime-local"
                         :disabled="scheduleLocked"
-                        :class="inputClass"
+                        :min="form.sales_starts_at || null"
+                        :invalid="Boolean(errors.sales_ends_at)"
                     />
                     <InputError :message="errors.sales_ends_at" />
                 </div>

@@ -93,6 +93,29 @@ function reject(event: ReviewItem): void {
                 >
             </div>
 
+            <div
+                v-if="event.images.length"
+                class="flex gap-2 overflow-x-auto"
+                aria-label="Photos to review"
+            >
+                <a
+                    v-for="(image, index) in event.images"
+                    :key="image.id"
+                    :href="image.url"
+                    target="_blank"
+                    rel="noopener"
+                    class="shrink-0 overflow-hidden rounded-lg border"
+                >
+                    <img
+                        :src="image.url"
+                        :alt="`Photo ${index + 1} of ${event.title}`"
+                        loading="lazy"
+                        class="h-20 w-32 object-cover"
+                    />
+                </a>
+            </div>
+            <p v-else class="text-sm text-muted-foreground">No photos.</p>
+
             <dl class="grid gap-3 text-sm sm:grid-cols-3">
                 <div>
                     <dt class="font-bold">When</dt>

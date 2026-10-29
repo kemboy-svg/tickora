@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Organizer;
 
 use App\Enums\TicketTypeStatus;
+use App\Http\Requests\Concerns\NormalizesLocalTimes;
 use App\Models\Event;
 use App\Support\LocalTime;
 use Carbon\CarbonImmutable;
@@ -18,6 +19,16 @@ use Illuminate\Validation\Validator;
  */
 class TicketTypeRequest extends FormRequest
 {
+    use NormalizesLocalTimes;
+
+    /**
+     * @return list<string>
+     */
+    protected function localTimeFields(): array
+    {
+        return ['sales_starts_at', 'sales_ends_at'];
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -44,6 +55,7 @@ class TicketTypeRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'date_format' => 'Choose a valid date and time for the :attribute.',
             'price.regex' => 'Enter the price as a number, e.g. 850 or 850.50. Use 0 for free tickets.',
             'max_per_order.gte' => 'The maximum per order must be at least the minimum.',
         ];

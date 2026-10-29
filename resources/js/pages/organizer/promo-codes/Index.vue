@@ -2,6 +2,7 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
+import DateTimeField from '@/components/tickora/DateTimeField.vue';
 import EmptyState from '@/components/tickora/EmptyState.vue';
 import type { PromoCodeRow } from '@/types';
 
@@ -215,11 +216,10 @@ function validity(code: PromoCodeRow): string {
                             >(optional)</span
                         ></label
                     >
-                    <input
+                    <DateTimeField
                         id="starts_at"
                         v-model="form.starts_at"
-                        type="datetime-local"
-                        :class="inputClass"
+                        :invalid="Boolean(errors.starts_at)"
                     />
                     <InputError :message="errors.starts_at" />
                 </div>
@@ -230,11 +230,11 @@ function validity(code: PromoCodeRow): string {
                             >(optional)</span
                         ></label
                     >
-                    <input
+                    <DateTimeField
                         id="ends_at"
                         v-model="form.ends_at"
-                        type="datetime-local"
-                        :class="inputClass"
+                        :min="form.starts_at || null"
+                        :invalid="Boolean(errors.ends_at)"
                     />
                     <InputError :message="errors.ends_at" />
                 </div>

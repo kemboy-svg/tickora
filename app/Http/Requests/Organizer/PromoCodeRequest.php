@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Organizer;
 
+use App\Http\Requests\Concerns\NormalizesLocalTimes;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Support\LocalTime;
@@ -17,6 +18,16 @@ use Illuminate\Validation\Validator;
  */
 class PromoCodeRequest extends FormRequest
 {
+    use NormalizesLocalTimes;
+
+    /**
+     * @return list<string>
+     */
+    protected function localTimeFields(): array
+    {
+        return ['starts_at', 'ends_at'];
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -44,6 +55,7 @@ class PromoCodeRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'date_format' => 'Choose a valid date and time for the :attribute.',
             'code.regex' => 'Use letters, numbers, dashes and underscores only.',
             'amount.regex' => 'Enter the amount as a number, e.g. 100 or 99.50.',
         ];

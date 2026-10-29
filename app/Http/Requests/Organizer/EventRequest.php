@@ -4,12 +4,14 @@ namespace App\Http\Requests\Organizer;
 
 use App\Actions\Events\EventData;
 use App\Enums\EventVisibility;
+use App\Http\Requests\Concerns\NormalizesLocalTimes;
 use App\Models\Category;
 use App\Support\Currency;
 use App\Support\LocalTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -20,6 +22,18 @@ use Illuminate\Validation\Validator;
  */
 class EventRequest extends FormRequest
 {
+    public const MAX_IMAGE_KB = 8192;
+
+    use NormalizesLocalTimes;
+
+    /**
+     * @return list<string>
+     */
+    protected function localTimeFields(): array
+    {
+        return ['starts_at', 'ends_at', 'sales_starts_at', 'sales_ends_at'];
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -47,6 +61,73 @@ class EventRequest extends FormRequest
             'venue.region' => ['nullable', 'string', 'max:100'],
             'venue.postal_code' => ['nullable', 'string', 'max:20'],
             'venue.country_code' => ['required', 'string', 'size:2', 'alpha'],
+            // Photos can be added when creating; afterwards they are managed
+            // on the event's own image endpoints.
+            'images' => ['sometimes', 'array', 'max:'.self::maxImages()],
+            'images.*' => self::imageRules(),
+        ];
+    }
+
+    /**
+     * Rules for one uploaded event photo. SVG is not accepted (the image
+     * rule excludes it), and every file is re-encoded after validation.
+     *
+     * @return list<string>
+     */
+    public static function imageRules(): array
+    {
+        return [
+            'file',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:'.self::MAX_IMAGE_KB,
+            'dimensions:min_width=600,min_height=300',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function imageMessages(): array
+    {
+        return [
+            'images.max' => 'You can add up to :max images.',
+            'images.*.uploaded' => 'An image failed to upload. It may be bigger than the server allows.',
+            'images.*.file' => 'An image failed to upload. Please try again.',
+            'images.*.image' => 'Upload JPG, PNG or WebP images.',
+            'images.*.mimes' => 'Upload JPG, PNG or WebP images.',
+            'images.*.max' => 'Each image must be 8 MB or smaller.',
+            'images.*.dimensions' => 'Images must be at least 600 × 300 pixels.',
+        ];
+    }
+
+    public static function maxImages(): int
+    {
+        $max = config('tickora.max_event_images', 8);
+
+        return is_numeric($max) && (int) $max > 0 ? (int) $max : 8;
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    public function images(): array
+    {
+        $files = $this->file('images');
+
+        return is_array($files)
+            ? array_values(array_filter($files, fn ($file): bool => $file instanceof UploadedFile))
+            : [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'date_format' => 'Choose a valid date and time for the :attribute.',
+            ...self::imageMessages(),
         ];
     }
 

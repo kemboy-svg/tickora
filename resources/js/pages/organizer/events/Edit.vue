@@ -3,10 +3,11 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import EventForm from '@/components/organizer/EventForm.vue';
+import EventImagesManager from '@/components/organizer/EventImagesManager.vue';
 import type { EventPayload } from '@/components/organizer/EventForm.vue';
 import TicketTypeEditor from '@/components/organizer/TicketTypeEditor.vue';
 import StatusBadge from '@/components/tickora/StatusBadge.vue';
-import type { Category, EventFormValues } from '@/types';
+import type { Category, EventFormValues, ImageLimits } from '@/types';
 
 const props = defineProps<{
     event: EventFormValues;
@@ -14,6 +15,7 @@ const props = defineProps<{
     currencies: string[];
     visibilities: Array<'public' | 'unlisted'>;
     timezones: string[];
+    imageLimits: ImageLimits;
     readiness: string[];
     can: {
         update: boolean;
@@ -21,6 +23,7 @@ const props = defineProps<{
         cancel: boolean;
         delete: boolean;
         manageTicketTypes: boolean;
+        manageImages: boolean;
     };
     organizerCanSell: boolean;
     ticketStatuses: string[];
@@ -169,6 +172,14 @@ function deleteDraft(): void {
                 </button>
             </div>
         </section>
+
+        <EventImagesManager
+            :event-id="event.id"
+            :images="event.images"
+            :max="imageLimits.max_images"
+            :max-kb="imageLimits.max_kb"
+            :can-manage="can.manageImages"
+        />
 
         <TicketTypeEditor
             :event-id="event.id"

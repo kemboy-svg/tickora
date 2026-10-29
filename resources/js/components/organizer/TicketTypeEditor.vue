@@ -2,6 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
+import DateTimeField from '@/components/tickora/DateTimeField.vue';
 import StatusBadge from '@/components/tickora/StatusBadge.vue';
 import type { TicketTypeFormValues, TicketTypeStatus } from '@/types';
 
@@ -344,11 +345,10 @@ function statusLabel(status: string): string {
                             >(optional)</span
                         ></label
                     >
-                    <input
+                    <DateTimeField
                         id="tt-sales-start"
                         v-model="form.sales_starts_at"
-                        type="datetime-local"
-                        :class="inputClass"
+                        :invalid="Boolean(errors.sales_starts_at)"
                     />
                     <InputError :message="errors.sales_starts_at" />
                 </div>
@@ -359,11 +359,11 @@ function statusLabel(status: string): string {
                             >(optional)</span
                         ></label
                     >
-                    <input
+                    <DateTimeField
                         id="tt-sales-end"
                         v-model="form.sales_ends_at"
-                        type="datetime-local"
-                        :class="inputClass"
+                        :min="form.sales_starts_at || null"
+                        :invalid="Boolean(errors.sales_ends_at)"
                     />
                     <InputError :message="errors.sales_ends_at" />
                 </div>

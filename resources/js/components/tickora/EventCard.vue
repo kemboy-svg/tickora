@@ -6,7 +6,7 @@ import type { EventCard } from '@/types';
 
 const props = defineProps<{ event: EventCard }>();
 
-// Deterministic cover tone per category until organisers can upload images.
+// Fallback cover tone per category for events without a photo.
 const tones = ['#2E1F7A', '#1E293B', '#7C2D12', '#134E4A', '#581C47'];
 const tone = computed(() => {
     let hash = 0;
@@ -23,11 +23,19 @@ const tone = computed(() => {
         class="group flex flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground transition-shadow hover:shadow-lg focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none motion-safe:transition-transform motion-safe:hover:-translate-y-0.5"
     >
         <div
-            class="flex aspect-[16/10] flex-col justify-between p-3.5"
+            class="relative flex aspect-[16/10] flex-col justify-between overflow-hidden p-3.5"
             :style="{ backgroundColor: tone }"
         >
+            <img
+                v-if="event.cover_url"
+                :src="event.cover_url"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="absolute inset-0 size-full object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]"
+            />
             <span
-                class="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold text-white"
+                class="relative self-start rounded-full bg-black/45 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm"
             >
                 {{ event.category }}
             </span>

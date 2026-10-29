@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\Payments\PaymentGateway;
+use App\Services\Media\ImageProcessor;
 use App\Services\Payments\PaymentGatewayManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Foundation\Application;
@@ -27,6 +28,12 @@ class AppServiceProvider extends ServiceProvider
             PaymentGateway::class,
             fn (Application $app): PaymentGateway => $app->make(PaymentGatewayManager::class)->driver(),
         );
+
+        $this->app->bind(ImageProcessor::class, function (): ImageProcessor {
+            $edge = config('tickora.image_max_edge', 2400);
+
+            return new ImageProcessor(is_numeric($edge) ? (int) $edge : 2400);
+        });
     }
 
     /**

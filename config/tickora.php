@@ -41,6 +41,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Event images
+    |--------------------------------------------------------------------------
+    |
+    | The filesystem disk event photos are stored on ("public" locally, after
+    | `php artisan storage:link`; an S3-compatible disk in production) and
+    | how many photos an event may have. Uploads are re-encoded, which strips
+    | camera metadata such as GPS location, and scaled to at most
+    | image_max_edge pixels on the long side.
+    |
+    */
+
+    'media_disk' => env('TICKORA_MEDIA_DISK', 'public'),
+
+    'max_event_images' => (int) env('TICKORA_MAX_EVENT_IMAGES', 8),
+
+    'image_max_edge' => 2400,
+
+    /*
+    |--------------------------------------------------------------------------
     | Currencies
     |--------------------------------------------------------------------------
     |

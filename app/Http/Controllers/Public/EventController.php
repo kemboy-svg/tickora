@@ -74,6 +74,7 @@ class EventController extends Controller
             'category',
             'venue',
             'organizer',
+            'images',
             'ticketTypes' => fn ($query) => $query->withHeld()->where('status', '!=', TicketTypeStatus::Hidden),
         ]);
 

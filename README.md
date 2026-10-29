@@ -71,6 +71,8 @@ Done:
 2. **Organisers, events and discovery**: organiser onboarding and workspace switching, event drafts with timezone-aware scheduling, ticket types, submit → review → publish, cancellation, the admin review queue and organiser verification, and the public homepage, discovery filters, event pages and organiser profiles.
 3. **Checkout and inventory**: tickets are held for 10 minutes by locking the ticket type rows and recounting availability in the same transaction, so two buyers can never get the last ticket (proved by a test that races separate processes against PostgreSQL). Server-side pricing with a customer booking fee, optional tax on the fee and promo codes; confirming creates a pending order with name and price snapshots and extends the hold to 15 minutes for payment. Expired holds stop counting immediately and are swept every minute by `php artisan tickora:expire-holds` (run `php artisan schedule:work` locally). Organisers manage promo codes under **Promo codes**.
 
+Also done: **event photos**: up to 8 photos per event, added while creating the event or later on its edit page; the first is the cover on listings and the event page, with a gallery for the rest. Uploads are checked, re-encoded (stripping camera metadata such as GPS location) and scaled to at most 2400 px. Run `php artisan storage:link` once so the `public` disk is served; set `TICKORA_MEDIA_DISK` to an S3-compatible disk in production.
+
 Next, per the implementation plan:
 
 4. A real payment provider adapter, signed webhook endpoint, reconciliation and refunds

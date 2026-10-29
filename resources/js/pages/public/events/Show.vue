@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarDays, MapPin, ShieldCheck } from '@lucide/vue';
+import { CalendarDays, Images, MapPin, ShieldCheck } from '@lucide/vue';
 import { computed, reactive, ref } from 'vue';
 import EventCard from '@/components/tickora/EventCard.vue';
 import StatusBadge from '@/components/tickora/StatusBadge.vue';
@@ -82,6 +82,26 @@ function change(id: string, delta: number): void {
     quantities[id] = Math.max(0, Math.min(max(id), next));
 }
 
+const cover = computed(() => props.event.images[0] ?? null);
+
+const lightbox = ref<HTMLDialogElement | null>(null);
+const photoIndex = ref(0);
+const active = computed(() => props.event.images[photoIndex.value] ?? null);
+
+function openPhoto(index: number): void {
+    photoIndex.value = index;
+    lightbox.value?.showModal();
+}
+
+function closePhoto(): void {
+    lightbox.value?.close();
+}
+
+function step(delta: number): void {
+    const count = props.event.images.length;
+    photoIndex.value = (photoIndex.value + delta + count) % count;
+}
+
 const page = usePage();
 const signedIn = computed(() => Boolean(page.props.auth?.user));
 
@@ -140,10 +160,27 @@ function checkout(): void {
         </nav>
 
         <div
-            class="flex h-56 items-end rounded-3xl bg-[#2E1F7A] p-5 sm:h-80"
-            role="img"
-            :aria-label="`${event.title} cover`"
-        />
+            class="relative h-56 overflow-hidden rounded-3xl bg-[#2E1F7A] sm:h-96"
+        >
+            <img
+                v-if="cover"
+                :src="cover.url"
+                :alt="`${event.title} cover photo`"
+                :width="cover.width"
+                :height="cover.height"
+                fetchpriority="high"
+                class="size-full object-cover"
+            />
+            <button
+                v-if="event.images.length > 1"
+                type="button"
+                class="absolute right-4 bottom-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-black/60 px-4 text-sm font-bold text-white backdrop-blur-sm hover:bg-black/75"
+                @click="openPhoto(0)"
+            >
+                <Images class="size-4" aria-hidden="true" />
+                View {{ event.images.length }} photos
+            </button>
+        </div>
 
         <div class="mt-8 flex flex-wrap items-start gap-10">
             <article class="flex min-w-0 flex-[999_1_560px] flex-col gap-8">
@@ -253,6 +290,33 @@ function checkout(): void {
                     >
                         {{ event.description }}
                     </p>
+                </section>
+
+                <section
+                    v-if="event.images.length > 1"
+                    aria-labelledby="photos"
+                >
+                    <h2 id="photos" class="mb-3 text-2xl font-extrabold">
+                        Photos
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        <button
+                            v-for="(image, index) in event.images"
+                            :key="image.id"
+                            type="button"
+                            class="overflow-hidden rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                            :aria-label="`Open photo ${index + 1} of ${event.images.length}`"
+                            @click="openPhoto(index)"
+                        >
+                            <img
+                                :src="image.url"
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                class="aspect-[16/10] w-full object-cover motion-safe:transition-transform motion-safe:hover:scale-[1.03]"
+                            />
+                        </button>
+                    </div>
                 </section>
 
                 <section v-if="event.refund_policy" aria-labelledby="refunds">
@@ -471,5 +535,51 @@ function checkout(): void {
                 </div>
             </aside>
         </div>
+        <dialog
+            ref="lightbox"
+            class="m-auto max-h-[92vh] w-[min(1100px,94vw)] rounded-2xl bg-black p-0 text-white backdrop:bg-black/80"
+            aria-label="Event photos"
+            @click.self="closePhoto"
+            @keydown.left.prevent="step(-1)"
+            @keydown.right.prevent="step(1)"
+        >
+            <figure v-if="active" class="relative flex flex-col">
+                <img
+                    :src="active.url"
+                    :alt="`Photo ${photoIndex + 1} of ${event.images.length}`"
+                    class="max-h-[82vh] w-full object-contain"
+                />
+                <figcaption
+                    class="flex items-center justify-between gap-3 p-3 text-sm"
+                >
+                    <span class="tabular-nums"
+                        >{{ photoIndex + 1 }} / {{ event.images.length }}</span
+                    >
+                    <span class="flex gap-2">
+                        <button
+                            type="button"
+                            class="min-h-11 rounded-lg bg-white/10 px-4 font-bold hover:bg-white/20"
+                            @click="step(-1)"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            type="button"
+                            class="min-h-11 rounded-lg bg-white/10 px-4 font-bold hover:bg-white/20"
+                            @click="step(1)"
+                        >
+                            Next
+                        </button>
+                        <button
+                            type="button"
+                            class="min-h-11 rounded-lg bg-white px-4 font-bold text-black"
+                            @click="closePhoto"
+                        >
+                            Close
+                        </button>
+                    </span>
+                </figcaption>
+            </figure>
+        </dialog>
     </div>
 </template>

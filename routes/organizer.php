@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Organizer\EventController;
+use App\Http\Controllers\Organizer\EventImageController;
 use App\Http\Controllers\Organizer\OnboardingController;
 use App\Http\Controllers\Organizer\PromoCodeController;
 use App\Http\Controllers\Organizer\SwitchWorkspaceController;
@@ -52,6 +53,14 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->name('organizer.')
             ->name('promo-codes.destroy');
 
         Route::scopeBindings()->group(function () {
+            Route::post('events/{managedEvent}/images', [EventImageController::class, 'store'])
+                ->middleware('throttle:30,1')
+                ->name('events.images.store');
+            Route::post('events/{managedEvent}/images/{image:public_id}/cover', [EventImageController::class, 'cover'])
+                ->name('events.images.cover');
+            Route::delete('events/{managedEvent}/images/{image:public_id}', [EventImageController::class, 'destroy'])
+                ->name('events.images.destroy');
+
             Route::post('events/{managedEvent}/ticket-types', [TicketTypeController::class, 'store'])
                 ->name('events.ticket-types.store');
             Route::put('events/{managedEvent}/ticket-types/{ticketType:public_id}', [TicketTypeController::class, 'update'])

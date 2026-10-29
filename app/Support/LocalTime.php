@@ -15,6 +15,28 @@ final class LocalTime
 {
     public const INPUT_FORMAT = 'Y-m-d\TH:i';
 
+    /**
+     * Browsers differ in what a datetime-local field submits: most send
+     * "2026-11-05T19:00", some add seconds ("2026-11-05T19:00:00" or
+     * "...:00.000"), and typed values may use a space. Reduce all of those
+     * to INPUT_FORMAT; anything else is returned unchanged so validation
+     * can reject it.
+     */
+    public static function normalizeInput(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $value = trim($value);
+
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2}(\.\d{1,6})?)?$/', $value, $m) === 1) {
+            return $m[1].'T'.$m[2];
+        }
+
+        return $value;
+    }
+
     public static function toUtc(?string $local, string $timezone): ?CarbonImmutable
     {
         if ($local === null || $local === '') {

@@ -14,6 +14,7 @@ export type EventCard = {
     slug: string;
     title: string;
     summary: string | null;
+    cover_url: string | null;
     category: string;
     category_slug: string;
     starts_at: string;
@@ -40,8 +41,16 @@ export type PublicTicketType = {
     max_per_order: number;
 };
 
+export type EventImage = {
+    id: string;
+    url: string;
+    width: number;
+    height: number;
+};
+
 export type EventDetail = EventCard & {
     description: string | null;
+    images: EventImage[];
     timezone: string;
     timezone_label: string;
     date_label: string | null;
@@ -136,6 +145,7 @@ export type EventFormValues = {
     review_notes: string | null;
     cancellation_reason: string | null;
     venue: VenueFormValues;
+    images: EventImage[];
     ticket_types: TicketTypeFormValues[];
 };
 
@@ -146,7 +156,10 @@ export type EventFormOptions = {
     currencies: string[];
     visibilities: Array<'public' | 'unlisted'>;
     timezones: string[];
+    imageLimits?: ImageLimits;
 };
+
+export type ImageLimits = { max_images: number; max_kb: number };
 
 export type PaginationLink = {
     url: string | null;

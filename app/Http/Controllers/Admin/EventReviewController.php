@@ -26,7 +26,7 @@ class EventReviewController extends Controller
 
         $events = Event::query()
             ->where('status', EventStatus::PendingReview)
-            ->with(['organizer', 'venue', 'category', 'ticketTypes'])
+            ->with(['organizer', 'venue', 'category', 'ticketTypes', 'images'])
             ->orderBy('submitted_at')
             ->paginate(20)
             ->through(fn (Event $event): array => [

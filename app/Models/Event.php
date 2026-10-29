@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Times are stored in UTC; `timezone` is the IANA zone used for display.
@@ -105,6 +106,31 @@ class Event extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
+    }
+
+    /**
+     * Photos, cover first.
+     *
+     * @return HasMany<EventImage, $this>
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(EventImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * Public URL of the cover photo, if the event has one. Uses the copied
+     * cover_image_key so listings need no extra query.
+     */
+    public function coverUrl(): ?string
+    {
+        if ($this->cover_image_key === null || $this->cover_image_key === '') {
+            return null;
+        }
+
+        $disk = config('tickora.media_disk', 'public');
+
+        return Storage::disk(is_string($disk) ? $disk : 'public')->url($this->cover_image_key);
     }
 
     /**

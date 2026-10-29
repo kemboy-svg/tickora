@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -108,12 +109,19 @@ class ChangeEventStatus
     {
         Gate::forUser($actor)->authorize('delete', $event);
 
+        $paths = $event->images()->get(['disk', 'path']);
+
         DB::transaction(function () use ($actor, $event): void {
             $this->audit->record('event.deleted', $event, ['title' => $event->title], actor: $actor);
             $event->ticketTypes()->delete();
             $event->staffAssignments()->delete();
             $event->delete();
         });
+
+        // Files go only after the rows are gone for good.
+        foreach ($paths as $image) {
+            Storage::disk($image->disk)->delete($image->path);
+        }
     }
 
     /**

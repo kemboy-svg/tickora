@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Organizer;
 
 use App\Actions\Events\ChangeEventStatus;
+use App\Actions\Events\ManageEventImages;
 use App\Actions\Events\SaveEvent;
 use App\Enums\EventStatus;
 use App\Enums\EventVisibility;
@@ -65,9 +66,14 @@ class EventController extends Controller
         ]);
     }
 
-    public function store(EventRequest $request, SaveEvent $saveEvent): RedirectResponse
+    public function store(EventRequest $request, SaveEvent $saveEvent, ManageEventImages $images): RedirectResponse
     {
-        $event = $saveEvent->create($this->actor($request), $this->workspace($request), $request->toData());
+        // Process photos first: a bad file is reported before anything is saved.
+        $photos = $images->prepare($request->images());
+
+        $actor = $this->actor($request);
+        $event = $saveEvent->create($actor, $this->workspace($request), $request->toData());
+        $images->attach($actor, $event, $photos);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Draft saved. Add ticket types next.']);
 
@@ -77,7 +83,7 @@ class EventController extends Controller
     public function edit(Request $request, Event $managedEvent, ChangeEventStatus $status): Response
     {
         Gate::authorize('view', $managedEvent);
-        $managedEvent->load(['venue', 'category', 'organizer', 'ticketTypes']);
+        $managedEvent->load(['venue', 'category', 'organizer', 'ticketTypes', 'images']);
 
         $user = $this->actor($request);
 
@@ -93,6 +99,7 @@ class EventController extends Controller
                 'cancel' => $user->can('cancel', $managedEvent),
                 'delete' => $user->can('delete', $managedEvent),
                 'manageTicketTypes' => $user->can('manageTicketTypes', $managedEvent),
+                'manageImages' => $user->can('update', $managedEvent),
             ],
             'organizerCanSell' => $managedEvent->organizer->canSell(),
             'ticketStatuses' => array_map(fn (TicketTypeStatus $s): string => $s->value, TicketTypeStatus::cases()),
@@ -151,6 +158,10 @@ class EventController extends Controller
             'currencies' => Currency::allowed(),
             'visibilities' => array_map(fn (EventVisibility $v): string => $v->value, EventVisibility::cases()),
             'timezones' => \DateTimeZone::listIdentifiers(),
+            'imageLimits' => [
+                'max_images' => EventRequest::maxImages(),
+                'max_kb' => EventRequest::MAX_IMAGE_KB,
+            ],
         ];
     }
 
