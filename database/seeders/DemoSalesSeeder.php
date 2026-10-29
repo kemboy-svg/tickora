@@ -52,7 +52,7 @@ class DemoSalesSeeder extends Seeder
             }
         }
 
-        $this->giveOrdersTo('amara@example.test', $events->pluck('id')->all());
+        $this->giveOrdersTo('amara@example.test', array_values($events->map(fn (Event $e): int => $e->id)->all()));
     }
 
     /**
