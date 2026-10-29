@@ -13,23 +13,20 @@ defineProps<Props>();
 </script>
 
 <template>
+    <!-- The Tickora mark; see components/tickora/TickoraLogo.vue. -->
     <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 32 32"
+        viewBox="0 0 64 64"
+        role="img"
+        aria-label="Tickora"
         :class="className"
         v-bind="$attrs"
     >
+        <rect width="64" height="64" rx="15" fill="#6D4AFF" />
         <path
-            fill="#6D4AFF"
-            d="M6 6H26A4 4 0 0 1 30 10V13A3 3 0 0 0 30 19V22A4 4 0 0 1 26 26H6A4 4 0 0 1 2 22V19A3 3 0 0 0 2 13V10A4 4 0 0 1 6 6Z"
+            fill="#FFFFFF"
+            d="M15 11h34a5 5 0 0 1 5 5v1.6a4.4 4.4 0 0 0 0 8.8V28a5 5 0 0 1-5 5h-9.5v13.5a7.5 7.5 0 0 1-15 0V33H15a5 5 0 0 1-5-5v-1.6a4.4 4.4 0 0 0 0-8.8V16a5 5 0 0 1 5-5z"
         />
-        <path
-            d="M11 10V22"
-            stroke="#FFFFFF"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-dasharray="2 3"
-        />
-        <circle cx="20" cy="16" r="3.5" fill="#FF6B6B" />
+        <circle cx="32" cy="46" r="3.8" fill="#FF6B6B" />
     </svg>
 </template>
