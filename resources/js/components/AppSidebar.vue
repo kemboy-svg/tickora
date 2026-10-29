@@ -90,7 +90,7 @@ const adminNavItems = computed<NavItem[]>(() => [
 ]);
 
 const footerNavItems: NavItem[] = [
-    { title: 'Public site', href: '/', icon: Globe },
+    { title: 'Home page', href: '/', icon: Globe },
 ];
 </script>
 
