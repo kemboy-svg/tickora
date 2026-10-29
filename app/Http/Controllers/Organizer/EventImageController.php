@@ -8,7 +8,6 @@ use App\Models\Event;
 use App\Models\EventImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 
 /**
@@ -25,7 +24,7 @@ class EventImageController extends Controller
         ], EventRequest::imageMessages());
 
         $files = $request->file('images');
-        $files = is_array($files) ? array_values(array_filter($files, fn ($f): bool => $f instanceof UploadedFile)) : [];
+        $files = is_array($files) ? array_values($files) : [];
 
         $added = $images->attach($this->actor($request), $managedEvent, $images->prepare($files));
 

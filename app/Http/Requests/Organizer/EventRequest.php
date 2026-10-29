@@ -115,9 +115,7 @@ class EventRequest extends FormRequest
     {
         $files = $this->file('images');
 
-        return is_array($files)
-            ? array_values(array_filter($files, fn ($file): bool => $file instanceof UploadedFile))
-            : [];
+        return is_array($files) ? array_values($files) : [];
     }
 
     /**
