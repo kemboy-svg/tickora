@@ -4,6 +4,7 @@ import {
     CalendarPlus,
     ChartColumn,
     ClipboardCheck,
+    CreditCard,
     Gauge,
     Globe,
     LayoutGrid,
@@ -86,6 +87,15 @@ const adminNavItems = computed<NavItem[]>(() => [
         : []),
     ...(nav.value?.verification
         ? [{ title: 'Organisers', href: '/admin/organizers', icon: Store }]
+        : []),
+    ...(nav.value?.payments
+        ? [
+              {
+                  title: 'Payment settings',
+                  href: '/admin/payments',
+                  icon: CreditCard,
+              },
+          ]
         : []),
 ]);
 

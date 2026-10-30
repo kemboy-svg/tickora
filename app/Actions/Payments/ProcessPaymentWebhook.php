@@ -2,13 +2,10 @@
 
 namespace App\Actions\Payments;
 
-use App\Actions\Orders\CompleteOrder;
-use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\WebhookProcessingStatus;
 use App\Exceptions\Payments\InvalidWebhookSignature;
 use App\Exceptions\Payments\PaymentProviderException;
-use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentWebhookEvent;
 use App\Services\Payments\Data\WebhookEvent;
@@ -38,7 +35,7 @@ class ProcessPaymentWebhook
 
     public function __construct(
         private readonly PaymentGatewayManager $gateways,
-        private readonly CompleteOrder $completeOrder,
+        private readonly UpdatePaymentStatus $updater,
     ) {}
 
     /**
@@ -128,42 +125,18 @@ class ProcessPaymentWebhook
             throw new PaymentProviderException("Webhook amount does not match payment {$payment->public_id}.");
         }
 
-        $status = $event->status;
+        if ($event->status === PaymentStatus::Succeeded) {
+            // Never trust the notification alone: ask the provider. If it
+            // does not (yet) agree, fail so the provider retries later.
+            $payment = $this->updater->refresh($payment);
 
-        if ($status === PaymentStatus::Succeeded) {
-            // Never trust the notification alone: ask the provider.
-            $confirmed = $this->gateways->driver($payment->provider)->fetchPayment($event->providerPaymentId);
-
-            if ($confirmed->status !== PaymentStatus::Succeeded
-                || $confirmed->amount->amount !== $payment->amount_minor
-                || $confirmed->amount->currency !== $payment->currency) {
+            if (! in_array($payment->status, [PaymentStatus::Succeeded, PaymentStatus::PartiallyRefunded, PaymentStatus::Refunded], true)) {
                 throw new PaymentProviderException("Provider does not confirm payment {$payment->public_id} as captured.");
             }
-        }
-
-        DB::transaction(function () use ($payment, $status, $event): void {
-            $locked = Payment::query()->lockForUpdate()->findOrFail($payment->id);
-            $locked->applyProviderStatus($status, $event->rawStatus);
-
-            if ($status === PaymentStatus::Failed) {
-                $failure = $event->payload['data']['failure_code'] ?? null;
-                $locked->failure_code = is_string($failure) ? mb_substr($failure, 0, 80) : 'failed';
-                $locked->save();
-
-                $order = Order::query()->lockForUpdate()->findOrFail($locked->order_id);
-
-                if ($order->status === OrderStatus::PendingPayment) {
-                    $order->transitionTo(OrderStatus::PaymentFailed);
-                }
-            }
-        });
-
-        $payment->refresh();
-
-        // Completing is idempotent, so a redelivered or retried success
-        // finishes an interrupted completion without doubling anything.
-        if ($payment->status === PaymentStatus::Succeeded) {
-            $this->completeOrder->handle($payment->order()->firstOrFail(), $payment);
+        } else {
+            $data = $event->payload['data'] ?? null;
+            $failure = is_array($data) && is_string($data['failure_code'] ?? null) ? $data['failure_code'] : $event->rawStatus;
+            $this->updater->apply($payment, $event->status, $event->rawStatus, $failure);
         }
 
         return self::PROCESSED;

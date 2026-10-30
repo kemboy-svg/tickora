@@ -53,6 +53,11 @@ final class FakePaymentGateway implements PaymentGateway
         return 'fake';
     }
 
+    public function verifyCredentials(): void
+    {
+        // Nothing to check: the sandbox has no account.
+    }
+
     public function supportsCurrency(string $currency): bool
     {
         return in_array(strtoupper($currency), $this->currencies, true);

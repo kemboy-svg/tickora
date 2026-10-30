@@ -35,6 +35,13 @@ interface PaymentGateway
     public function name(): string;
 
     /**
+     * Make a harmless authenticated call to check the configured keys.
+     *
+     * @throws PaymentProviderException with a message safe to show admins
+     */
+    public function verifyCredentials(): void;
+
+    /**
      * Whether this provider can charge in the given ISO 4217 currency.
      */
     public function supportsCurrency(string $currency): bool;

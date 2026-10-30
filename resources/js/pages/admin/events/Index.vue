@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { CreditCard } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import EmptyState from '@/components/tickora/EmptyState.vue';
 import Pagination from '@/components/tickora/Pagination.vue';
@@ -11,9 +12,71 @@ type ReviewItem = EventDetail & {
     submitted_label: string | null;
     organizer_status: string;
     readiness: string[];
+    payment_provider: string | null;
+    currency: string;
 };
 
-defineProps<{ events: Paginated<ReviewItem> }>();
+type ProviderOption = {
+    value: string;
+    label: string;
+    usable: boolean;
+    currencies: string[];
+};
+
+const props = defineProps<{
+    events: Paginated<ReviewItem>;
+    filters: { status: 'pending_review' | 'published' };
+    payments: {
+        can_manage: boolean;
+        default: string;
+        options: ProviderOption[];
+    };
+}>();
+
+const tabs = [
+    { value: 'pending_review', label: 'Waiting for review' },
+    { value: 'published', label: 'Live events' },
+] as const;
+
+function showTab(status: string): void {
+    router.get('/admin/events', status === 'published' ? { status } : {}, {
+        preserveScroll: true,
+    });
+}
+
+const defaultLabel = computed(
+    () =>
+        props.payments.options.find((o) => o.value === props.payments.default)
+            ?.label ?? props.payments.default,
+);
+
+function providerLabel(value: string | null): string {
+    if (value === null) {
+        return `Platform default (${defaultLabel.value})`;
+    }
+
+    return (
+        props.payments.options.find((o) => o.value === value)?.label ?? value
+    );
+}
+
+const page = usePage();
+const providerError = computed(
+    () => (page.props.errors as Record<string, string | undefined>).provider,
+);
+const savingProviderFor = ref<string | null>(null);
+
+function setProvider(event: ReviewItem, value: string): void {
+    savingProviderFor.value = event.id;
+    router.patch(
+        `/admin/events/${event.id}/payment-provider`,
+        { provider: value === '' ? null : value },
+        {
+            preserveScroll: true,
+            onFinish: () => (savingProviderFor.value = null),
+        },
+    );
+}
 
 defineOptions({
     layout: {
@@ -60,15 +123,46 @@ function reject(event: ReviewItem): void {
         <header>
             <h1 class="text-2xl font-extrabold tracking-tight">Event review</h1>
             <p class="text-sm text-muted-foreground">
-                Oldest submissions first. Approving publishes the event
-                immediately.
+                {{
+                    filters.status === 'published'
+                        ? 'Upcoming live events, soonest first. Choose which payment provider each one uses.'
+                        : 'Oldest submissions first. Approving publishes the event immediately.'
+                }}
             </p>
         </header>
 
+        <nav class="flex gap-2" aria-label="Event lists">
+            <button
+                v-for="tab in tabs"
+                :key="tab.value"
+                type="button"
+                class="min-h-10 rounded-full border px-4 text-sm font-bold"
+                :class="
+                    filters.status === tab.value
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'hover:bg-accent'
+                "
+                :aria-current="
+                    filters.status === tab.value ? 'page' : undefined
+                "
+                @click="showTab(tab.value)"
+            >
+                {{ tab.label }}
+            </button>
+        </nav>
+
         <EmptyState
             v-if="!events.data.length"
-            title="Nothing waiting for review"
-            description="New submissions from organisers will appear here."
+            :title="
+                filters.status === 'published'
+                    ? 'No upcoming live events'
+                    : 'Nothing waiting for review'
+            "
+            :description="
+                filters.status === 'published'
+                    ? 'Published events that have not ended appear here.'
+                    : 'New submissions from organisers will appear here.'
+            "
         />
 
         <article
@@ -165,7 +259,65 @@ function reject(event: ReviewItem): void {
                 published. Verify the organiser first, or send the event back.
             </p>
 
-            <div v-if="rejectFor !== event.id" class="flex flex-wrap gap-3">
+            <div
+                class="flex flex-wrap items-center gap-3 rounded-xl bg-muted/60 p-3 text-sm"
+            >
+                <CreditCard
+                    class="size-4 shrink-0 text-primary"
+                    aria-hidden="true"
+                />
+                <template v-if="payments.can_manage">
+                    <label :for="`provider-${event.id}`" class="font-bold"
+                        >Payments ({{ event.currency }})</label
+                    >
+                    <select
+                        :id="`provider-${event.id}`"
+                        :value="event.payment_provider ?? ''"
+                        class="min-h-10 rounded-lg border bg-background px-2"
+                        :disabled="savingProviderFor === event.id"
+                        @change="
+                            setProvider(
+                                event,
+                                ($event.target as HTMLSelectElement).value,
+                            )
+                        "
+                    >
+                        <option value="">
+                            Platform default ({{ defaultLabel }})
+                        </option>
+                        <option
+                            v-for="option in payments.options"
+                            :key="option.value"
+                            :value="option.value"
+                            :disabled="
+                                !option.usable ||
+                                !option.currencies.includes(event.currency)
+                            "
+                        >
+                            {{ option.label
+                            }}{{ option.usable ? '' : ' (not set up)' }}
+                        </option>
+                    </select>
+                    <span
+                        v-if="providerError && savingProviderFor === null"
+                        class="text-destructive"
+                        >{{ providerError }}</span
+                    >
+                </template>
+                <span v-else
+                    >Payments:
+                    <strong>{{
+                        providerLabel(event.payment_provider)
+                    }}</strong></span
+                >
+            </div>
+
+            <div
+                v-if="
+                    event.status === 'pending_review' && rejectFor !== event.id
+                "
+                class="flex flex-wrap gap-3"
+            >
                 <button
                     type="button"
                     :disabled="
@@ -187,7 +339,7 @@ function reject(event: ReviewItem): void {
             </div>
 
             <form
-                v-else
+                v-else-if="event.status === 'pending_review'"
                 class="flex flex-col gap-3"
                 @submit.prevent="reject(event)"
             >

@@ -6,6 +6,7 @@ use App\Actions\Orders\CompleteOrder;
 use App\Enums\CheckoutStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Exceptions\Payments\PaymentProviderException;
 use App\Models\Checkout;
 use App\Models\Order;
 use App\Models\Payment;
@@ -60,10 +61,13 @@ class StartPayment
             return ['order' => $this->completeOrder->handle($order), 'redirect' => null];
         }
 
-        $gateway = $this->gateways->driver();
+        try {
+            // The provider an admin chose for this event, or the default.
+            $gateway = $this->gateways->forEvent($order->event()->firstOrFail());
+        } catch (PaymentProviderException $e) {
+            report($e);
 
-        if (! $gateway->supportsCurrency($order->currency)) {
-            throw ValidationException::withMessages(['checkout' => "Online payment in {$order->currency} isn't available yet."]);
+            throw ValidationException::withMessages(['checkout' => "Online payment for this event isn't available right now. Please try again later or contact the organiser."]);
         }
 
         $payment = DB::transaction(function () use ($order, $gateway): Payment {
@@ -94,23 +98,33 @@ class StartPayment
             return $payment;
         });
 
+        // Pressing Pay again returns to the same provider page.
+        if ($payment->checkout_url !== null) {
+            return ['order' => $order, 'redirect' => $payment->checkout_url];
+        }
+
         $returnUrl = route('checkout.show', $checkout);
 
-        $session = $gateway->createCheckout(new CheckoutRequest(
-            idempotencyKey: $payment->idempotency_key,
-            amount: $order->total,
-            orderReference: $order->reference,
-            customerEmail: $order->customer_email,
-            returnUrl: $returnUrl,
-            cancelUrl: $returnUrl,
-            metadata: ['order' => $order->public_id],
-        ));
+        try {
+            $session = $gateway->createCheckout(new CheckoutRequest(
+                idempotencyKey: $payment->idempotency_key,
+                amount: $order->total,
+                orderReference: $order->reference,
+                customerEmail: $order->customer_email,
+                returnUrl: $returnUrl,
+                cancelUrl: $returnUrl,
+                metadata: ['order' => $order->public_id],
+            ));
+        } catch (PaymentProviderException $e) {
+            report($e);
 
-        if ($payment->provider_payment_id === null) {
-            $payment->provider_payment_id = $session->providerPaymentId;
-            $payment->provider_status = $session->rawStatus;
-            $payment->save();
+            throw ValidationException::withMessages(['checkout' => "We couldn't open the payment page. No money was taken; please try again in a moment."]);
         }
+
+        $payment->provider_payment_id = $session->providerPaymentId;
+        $payment->provider_status = $session->rawStatus;
+        $payment->checkout_url = $session->redirectUrl;
+        $payment->save();
 
         return ['order' => $order, 'redirect' => $session->redirectUrl];
     }

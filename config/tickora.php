@@ -119,6 +119,18 @@ return [
                 'hosted_page' => true,
                 'currencies' => ['MUR', 'KES', 'ZAR', 'USD', 'EUR'],
             ],
+
+            // Keys for Stripe and Paystack are entered by platform admins
+            // under Admin → Payment settings and stored encrypted; only
+            // the currencies each can charge in are configured here.
+            'stripe' => [
+                'webhook_tolerance_seconds' => 300,
+                'currencies' => ['MUR', 'KES', 'ZAR', 'USD', 'EUR', 'GBP', 'NGN', 'UGX', 'TZS', 'RWF', 'SCR'],
+            ],
+
+            'paystack' => [
+                'currencies' => ['NGN', 'GHS', 'ZAR', 'KES', 'USD', 'XOF'],
+            ],
         ],
     ],
 

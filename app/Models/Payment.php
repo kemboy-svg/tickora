@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $provider_account_id
  * @property string|null $provider_payment_id
  * @property string|null $provider_status
+ * @property string|null $checkout_url
  * @property string $idempotency_key
  * @property string $currency
  * @property int $amount_minor

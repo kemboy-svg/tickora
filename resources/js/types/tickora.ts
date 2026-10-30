@@ -194,6 +194,7 @@ export type NavFlags = {
     platform: boolean;
     moderation: boolean;
     verification: boolean;
+    payments: boolean;
 };
 
 export type CheckoutStatus =

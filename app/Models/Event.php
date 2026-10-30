@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EventStatus;
 use App\Enums\EventVisibility;
+use App\Enums\PaymentProvider;
 use App\Exceptions\InvalidStateTransition;
 use App\Models\Concerns\BelongsToOrganizer;
 use App\Models\Concerns\HasPublicId;
@@ -32,6 +33,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $cover_image_key
  * @property string $timezone
  * @property string $currency
+ * @property PaymentProvider|null $payment_provider
  * @property CarbonInterface $starts_at
  * @property CarbonInterface $ends_at
  * @property CarbonInterface|null $sales_starts_at
@@ -79,6 +81,7 @@ class Event extends Model
     protected function casts(): array
     {
         return [
+            'payment_provider' => PaymentProvider::class,
             'status' => EventStatus::class,
             'visibility' => EventVisibility::class,
             'starts_at' => 'datetime',

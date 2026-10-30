@@ -7,9 +7,12 @@ use App\Actions\Checkout\CreateCheckout;
 use App\Actions\Checkout\ReleaseCheckout;
 use App\Actions\Orders\RefundUnfulfillableOrder;
 use App\Actions\Payments\StartPayment;
+use App\Actions\Payments\UpdatePaymentStatus;
 use App\Enums\CheckoutStatus;
 use App\Enums\EventStatus;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+use App\Exceptions\Payments\PaymentProviderException;
 use App\Models\Checkout;
 use App\Models\Event;
 use App\Models\InventoryReservation;
@@ -54,11 +57,19 @@ class CheckoutController extends Controller
         return to_route('checkout.show', $checkout);
     }
 
-    public function show(Request $request, Checkout $checkout): Response|RedirectResponse
+    public function show(Request $request, Checkout $checkout, UpdatePaymentStatus $updater): Response|RedirectResponse
     {
         Gate::forUser($this->customer($request))->authorize('view', $checkout);
 
         $checkout->load(['event.venue', 'reservations' => fn ($q) => $q->orderBy('id'), 'promoCode', 'order']);
+
+        // Back from the provider's page: ask the provider how the payment
+        // went, rather than waiting for its webhook (which may be late, or
+        // unable to reach a development machine at all).
+        if ($checkout->order instanceof Order && ! $checkout->order->status->wasPaid()) {
+            $this->syncOpenPayment($checkout->order, $updater);
+            $checkout->load('order');
+        }
 
         // Back from the payment page with the order paid: show the tickets.
         if ($checkout->order instanceof Order && $checkout->order->status->wasPaid()) {
@@ -108,6 +119,26 @@ class CheckoutController extends Controller
     public function pay(Request $request, Checkout $checkout, StartPayment $pay): SymfonyResponse
     {
         return $this->toPayment($this->customer($request), $checkout, $pay);
+    }
+
+    private function syncOpenPayment(Order $order, UpdatePaymentStatus $updater): void
+    {
+        $payment = $order->payments()
+            ->whereIn('status', [PaymentStatus::Created, PaymentStatus::RequiresAction, PaymentStatus::Processing])
+            ->whereNotNull('provider_payment_id')
+            ->latest('id')
+            ->first();
+
+        if ($payment === null) {
+            return;
+        }
+
+        try {
+            $updater->refresh($payment);
+        } catch (PaymentProviderException $e) {
+            // The webhook will settle it; the page shows the current state.
+            report($e);
+        }
     }
 
     private function toPayment(User $customer, Checkout $checkout, StartPayment $pay): SymfonyResponse
