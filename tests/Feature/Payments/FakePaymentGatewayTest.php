@@ -13,6 +13,7 @@ use App\Services\Payments\Fake\FakePaymentGateway;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
@@ -181,7 +182,7 @@ class FakePaymentGatewayTest extends TestCase
 
         $this->expectException(PaymentProviderException::class);
 
-        (new PaymentGatewayManager($this->app, $this->app['config'], $this->app['cache']))->driver('fake');
+        (new PaymentGatewayManager($this->app, $this->app['config'], $this->app['cache'], $this->app->make(HttpFactory::class)))->driver('fake');
     }
 
     public function test_unknown_providers_are_refused(): void

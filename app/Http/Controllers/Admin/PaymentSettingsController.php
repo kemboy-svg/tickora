@@ -38,8 +38,8 @@ class PaymentSettingsController extends Controller
             return [
                 'provider' => $provider->value,
                 'label' => $provider->label(),
-                'enabled' => $row?->enabled ?? false,
-                'is_default' => $row?->is_default ?? false,
+                'enabled' => $row !== null && $row->enabled,
+                'is_default' => $row !== null && $row->is_default,
                 'usable' => $row?->isUsable() ?? false,
                 'mode' => $row?->mode(),
                 'public_key' => $row?->public_key,
