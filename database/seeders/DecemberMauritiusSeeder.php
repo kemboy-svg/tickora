@@ -382,9 +382,9 @@ class DecemberMauritiusSeeder extends Seeder
             $t = $y / $height;
             $color = imagecolorallocate(
                 $image,
-                (int) ($from[0] + ($to[0] - $from[0]) * $t),
-                (int) ($from[1] + ($to[1] - $from[1]) * $t),
-                (int) ($from[2] + ($to[2] - $from[2]) * $t),
+                self::channel($from[0] + ($to[0] - $from[0]) * $t),
+                self::channel($from[1] + ($to[1] - $from[1]) * $t),
+                self::channel($from[2] + ($to[2] - $from[2]) * $t),
             );
             imagefilledrectangle($image, 0, $y, $width, $y + 4, (int) $color);
         }
@@ -428,6 +428,14 @@ class DecemberMauritiusSeeder extends Seeder
 
         $event->cover_image_key = $stored;
         $event->save();
+    }
+
+    /**
+     * @return int<0, 255>
+     */
+    private static function channel(float|int $value): int
+    {
+        return max(0, min(255, (int) $value));
     }
 
     private function local(string $time): CarbonImmutable
