@@ -159,6 +159,11 @@ class DatabaseSeeder extends Seeder
         $assignment->assigned_by = $owner->id;
         $assignment->save();
 
+        // --- December in Mauritius ----------------------------------------
+        // A full month of test events across the island (also runnable on
+        // its own: php artisan db:seed --class=DecemberMauritiusSeeder).
+        $this->call(DecemberMauritiusSeeder::class);
+
         // --- Demo sales ---------------------------------------------------
         // Paid orders behind the sold counts above, so dashboards have data.
         $this->call(DemoSalesSeeder::class);

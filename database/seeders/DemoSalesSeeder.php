@@ -30,16 +30,22 @@ class DemoSalesSeeder extends Seeder
 
         mt_srand(2026);
 
-        $customers = collect(range(1, 40))->map(fn (int $i): User => User::factory()->create([
-            'name' => fake()->name(),
-            'email' => sprintf('customer%02d@example.test', $i),
-        ]));
+        // Re-runnable: existing demo customers are reused.
+        $customers = collect(range(1, 40))->map(fn (int $i): User => User::query()
+            ->where('email', sprintf('customer%02d@example.test', $i))
+            ->first() ?? User::factory()->create([
+                'name' => fake()->name(),
+                'email' => sprintf('customer%02d@example.test', $i),
+            ]));
 
         $feeBps = (int) config('tickora.platform_fee_bps', 500);
         $now = CarbonImmutable::now();
 
+        // Only events with no orders yet, so running this again (or after
+        // another seeder adds events) never doubles anyone's sales.
         $events = Event::query()
             ->where('status', EventStatus::Published)
+            ->whereDoesntHave('orders')
             ->with('ticketTypes')
             ->get();
 
