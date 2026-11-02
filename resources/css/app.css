@@ -15,8 +15,6 @@
 
 .dark {
     color-scheme: dark;
-    /* The logo's violet, lightened so it stands out on dark backgrounds. */
-    --tickora-stub: #8466ff;
 }
 
 @theme inline {
