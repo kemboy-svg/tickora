@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The Tickora mark: a ticket whose crossbar and stem form a "T", with a
- * coral dot for the one ticket that gets you into every event.
+ * The Tickora mark: a ticket torn at the door, violet body and coral stub.
+ * The violet lightens on dark backgrounds via --tickora-stub (see app.css).
  * Keep in sync with AppLogoIcon.vue and public/favicon.svg.
  */
 withDefaults(
@@ -15,7 +15,10 @@ withDefaults(
 </script>
 
 <template>
-    <span class="inline-flex items-center gap-2.5">
+    <span
+        class="inline-flex items-center gap-2.5"
+        :class="inverted ? '[--tickora-stub:#8466FF]' : ''"
+    >
         <svg
             :width="size"
             :height="size"
@@ -23,12 +26,16 @@ withDefaults(
             aria-hidden="true"
             class="shrink-0"
         >
-            <rect width="64" height="64" rx="15" fill="#6D4AFF" />
-            <path
-                fill="#FFFFFF"
-                d="M15 11h34a5 5 0 0 1 5 5v1.6a4.4 4.4 0 0 0 0 8.8V28a5 5 0 0 1-5 5h-9.5v13.5a7.5 7.5 0 0 1-15 0V33H15a5 5 0 0 1-5-5v-1.6a4.4 4.4 0 0 0 0-8.8V16a5 5 0 0 1 5-5z"
-            />
-            <circle cx="32" cy="46" r="3.8" fill="#FF6B6B" />
+            <g transform="rotate(-10 32 32)">
+                <path
+                    style="fill: var(--tickora-stub, #6d4aff)"
+                    d="M8 14h28l-6 9 6 9-6 9 6 9H8a5 5 0 0 1-5-5V19a5 5 0 0 1 5-5z"
+                />
+                <path
+                    fill="#FF6B6B"
+                    d="M44 11h13a5 5 0 0 1 5 5v26a5 5 0 0 1-5 5H44l6-9-6-9 6-9-6-9z"
+                />
+            </g>
         </svg>
         <span
             v-if="showWordmark"
