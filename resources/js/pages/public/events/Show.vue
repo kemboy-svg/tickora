@@ -104,6 +104,10 @@ function step(delta: number): void {
 
 const page = usePage();
 const signedIn = computed(() => Boolean(page.props.auth?.user));
+// Buying needs a confirmed email; say so here rather than after the click.
+const verified = computed(() =>
+    Boolean(page.props.auth?.user?.email_verified_at),
+);
 
 const form = useForm({
     event: props.event.id,
@@ -453,7 +457,7 @@ function checkout(): void {
                             }}</span>
                         </div>
                         <div
-                            v-if="signedIn && event.sales_open"
+                            v-if="signedIn && verified && event.sales_open"
                             class="flex flex-col gap-2"
                         >
                             <button
@@ -500,8 +504,22 @@ function checkout(): void {
                             {{ form.errors.items ?? form.errors.event }}
                         </p>
 
+                        <div
+                            v-if="signedIn && !verified"
+                            class="flex flex-col gap-2 rounded-xl bg-violet-50 p-4 text-sm text-violet-950 dark:bg-violet-950/40 dark:text-violet-100"
+                        >
+                            <p>
+                                Confirm your email address to buy tickets. We
+                                sent you a link when you signed up.
+                            </p>
+                            <Link
+                                href="/email/verify"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary font-extrabold text-primary-foreground"
+                                >Confirm my email</Link
+                            >
+                        </div>
                         <button
-                            v-if="signedIn"
+                            v-else-if="signedIn"
                             type="button"
                             :disabled="
                                 !event.sales_open ||

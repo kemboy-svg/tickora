@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarDays, Clock, MapPin, ReceiptText, Ticket } from '@lucide/vue';
+import {
+    CalendarDays,
+    CircleCheck,
+    Clock,
+    MapPin,
+    ReceiptText,
+    Ticket,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import StatTile from '@/components/dashboard/StatTile.vue';
 import EmptyState from '@/components/tickora/EmptyState.vue';
 import type { CustomerOrder, Money } from '@/types';
 
 defineProps<{
+    justVerified: boolean;
     stats: {
         upcoming_events: number;
         upcoming_tickets: number;
@@ -79,6 +87,15 @@ const statusClass: Record<string, string> = {
                 >
             </div>
         </header>
+
+        <p
+            v-if="justVerified"
+            role="status"
+            class="flex items-center gap-3 rounded-2xl border border-green-300 bg-green-50 p-4 text-sm font-semibold text-green-950 dark:border-green-900 dark:bg-green-950/40 dark:text-green-100"
+        >
+            <CircleCheck class="size-5 shrink-0" aria-hidden="true" />
+            Your email is confirmed. You're all set to buy tickets.
+        </p>
 
         <div class="grid gap-4 sm:grid-cols-3">
             <StatTile

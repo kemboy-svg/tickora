@@ -39,6 +39,9 @@ return [
     // Upper bound on tickets in one order, across all ticket types.
     'max_tickets_per_order' => (int) env('TICKORA_MAX_TICKETS_PER_ORDER', 20),
 
+    // Proxies in front of the app (see AppServiceProvider::configureProxies).
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
     // Calendar days on the platform dashboard are counted in this zone.
     'reporting_timezone' => env('TICKORA_REPORTING_TIMEZONE', 'Indian/Mauritius'),
 

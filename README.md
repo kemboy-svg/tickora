@@ -63,6 +63,10 @@ A modular monolith: one Laravel app, one PostgreSQL database, business rules in 
 - **The database backs the rules up**: CHECK constraints on statuses, amounts and capacity; one active owner per organiser; an append-only `ledger_entries` table; immutable `audit_logs`; unique webhook event IDs.
 - **Privileged areas** use the `two-factor` route middleware. Suspended users are signed out on their next request.
 
+## Hosting
+
+See [docs/deployment.md](docs/deployment.md) for putting Tickora on a server for testers (staging) and for production.
+
 ## Status
 
 Done:

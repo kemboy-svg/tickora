@@ -61,6 +61,8 @@ class DashboardController extends Controller
         $paidUpcoming = $upcoming->filter(fn (Order $o): bool => $o->status->wasPaid());
 
         return Inertia::render('Dashboard', [
+            // Arriving from the email confirmation link (?verified=1).
+            'justVerified' => $request->boolean('verified') && $user->hasVerifiedEmail(),
             'stats' => [
                 'upcoming_events' => $paidUpcoming->pluck('event_id')->unique()->count(),
                 'upcoming_tickets' => (int) $paidUpcoming->sum('items_sum_quantity'),
