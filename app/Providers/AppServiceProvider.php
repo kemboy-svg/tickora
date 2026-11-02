@@ -6,6 +6,7 @@ use App\Contracts\Payments\PaymentGateway;
 use App\Services\Media\ImageProcessor;
 use App\Services\Payments\PaymentGatewayManager;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -48,6 +50,12 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureProxies();
         $this->configureVerificationEmail();
+
+        // Remember a fresh confirmation for the next page, wherever the
+        // link sends them (it returns people to the page they first tried).
+        Event::listen(Verified::class, function (): void {
+            session()->flash('email_verified', true);
+        });
     }
 
     /**

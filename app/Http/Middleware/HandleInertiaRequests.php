@@ -46,6 +46,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'nav' => fn (): array => $this->navigation($request),
+            // True on the first page after clicking the email confirmation link.
+            'emailJustVerified' => fn (): bool => (bool) $request->session()->get('email_verified', false),
         ];
     }
 

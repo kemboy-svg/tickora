@@ -14,7 +14,6 @@ import EmptyState from '@/components/tickora/EmptyState.vue';
 import type { CustomerOrder, Money } from '@/types';
 
 defineProps<{
-    justVerified: boolean;
     stats: {
         upcoming_events: number;
         upcoming_tickets: number;
@@ -89,7 +88,7 @@ const statusClass: Record<string, string> = {
         </header>
 
         <p
-            v-if="justVerified"
+            v-if="page.props.emailJustVerified"
             role="status"
             class="flex items-center gap-3 rounded-2xl border border-green-300 bg-green-50 p-4 text-sm font-semibold text-green-950 dark:border-green-900 dark:bg-green-950/40 dark:text-green-100"
         >

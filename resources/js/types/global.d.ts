@@ -23,6 +23,7 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             nav: NavFlags;
             workspace?: Workspace;
+            emailJustVerified?: boolean;
             [key: string]: unknown;
         };
     }

@@ -64,14 +64,19 @@ class VerificationJourneyTest extends TestCase
                 ->component('auth/VerifyEmail')
                 ->where('auth.user.email', 'asha@example.test'));
 
-        // Clicking the emailed link confirms and lands on the dashboard with a confirmation.
+        // Clicking the emailed link confirms, returns them to the page they
+        // first tried (My tickets), and that page says it worked.
         $this->actingAs($user)->get((string) $mail->actionUrl)
-            ->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+            ->assertRedirect(route('dashboard'));
 
         $this->assertTrue($user->fresh()?->hasVerifiedEmail());
 
-        $this->actingAs($user)->get('/dashboard?verified=1')
-            ->assertInertia(fn (Assert $page) => $page->where('justVerified', true));
+        $this->actingAs($user)->get('/dashboard')
+            ->assertInertia(fn (Assert $page) => $page->where('emailJustVerified', true));
+
+        // Only once.
+        $this->actingAs($user)->get('/dashboard')
+            ->assertInertia(fn (Assert $page) => $page->where('emailJustVerified', false));
     }
 
     public function test_unconfirmed_accounts_cannot_buy_tickets_yet(): void
