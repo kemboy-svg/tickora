@@ -17,6 +17,7 @@ const props = defineProps<{
         event: string;
         email: string;
         cancel_url: string;
+        action_url: string | null;
     };
 }>();
 
@@ -25,7 +26,7 @@ const busy = ref<'succeed' | 'decline' | null>(null);
 function finish(outcome: 'succeed' | 'decline'): void {
     busy.value = outcome;
     router.post(
-        `/sandbox/payments/${props.payment.id}`,
+        props.payment.action_url ?? `/sandbox/payments/${props.payment.id}`,
         { outcome },
         { onFinish: () => (busy.value = null) },
     );

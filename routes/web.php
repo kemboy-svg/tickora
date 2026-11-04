@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppPaymentReturnController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
@@ -45,18 +46,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
-
-    // The sandbox provider's payment screen. Never registered in production.
-    if (! app()->isProduction()) {
-        Route::get('sandbox/payments/{paymentId}', [SandboxPaymentController::class, 'show'])
-            ->where('paymentId', 'fake_pay_[a-f0-9]{24}')
-            ->name('sandbox.payments.show');
-        Route::post('sandbox/payments/{paymentId}', [SandboxPaymentController::class, 'update'])
-            ->where('paymentId', 'fake_pay_[a-f0-9]{24}')
-            ->middleware('throttle:30,1')
-            ->name('sandbox.payments.update');
-    }
 });
+
+// The sandbox provider's payment screen, for the signed-in customer or a
+// signed link from the app. Never registered in production.
+if (! app()->isProduction()) {
+    Route::get('sandbox/payments/{paymentId}', [SandboxPaymentController::class, 'show'])
+        ->where('paymentId', 'fake_pay_[a-f0-9]{24}')
+        ->name('sandbox.payments.show');
+    Route::post('sandbox/payments/{paymentId}', [SandboxPaymentController::class, 'update'])
+        ->where('paymentId', 'fake_pay_[a-f0-9]{24}')
+        ->middleware('throttle:30,1')
+        ->name('sandbox.payments.update');
+}
+
+// Where the payment provider sends a buyer who paid in the app.
+Route::get('app/payment-return/{checkout}', AppPaymentReturnController::class)
+    ->middleware('signed')
+    ->name('app.payment-return');
 
 require __DIR__.'/organizer.php';
 require __DIR__.'/admin.php';

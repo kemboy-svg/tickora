@@ -5,21 +5,14 @@ namespace App\Http\Controllers;
 use App\Actions\Checkout\ConfirmCheckout;
 use App\Actions\Checkout\CreateCheckout;
 use App\Actions\Checkout\ReleaseCheckout;
-use App\Actions\Orders\RefundUnfulfillableOrder;
 use App\Actions\Payments\StartPayment;
-use App\Actions\Payments\UpdatePaymentStatus;
-use App\Enums\CheckoutStatus;
+use App\Actions\Payments\SyncOpenPayment;
 use App\Enums\EventStatus;
-use App\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
-use App\Exceptions\Payments\PaymentProviderException;
+use App\Http\Presenters\CheckoutPresenter;
 use App\Models\Checkout;
 use App\Models\Event;
-use App\Models\InventoryReservation;
 use App\Models\Order;
 use App\Models\User;
-use App\Support\LocalTime;
-use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -57,7 +50,7 @@ class CheckoutController extends Controller
         return to_route('checkout.show', $checkout);
     }
 
-    public function show(Request $request, Checkout $checkout, UpdatePaymentStatus $updater): Response|RedirectResponse
+    public function show(Request $request, Checkout $checkout, SyncOpenPayment $sync): Response|RedirectResponse
     {
         Gate::forUser($this->customer($request))->authorize('view', $checkout);
 
@@ -67,7 +60,7 @@ class CheckoutController extends Controller
         // went, rather than waiting for its webhook (which may be late, or
         // unable to reach a development machine at all).
         if ($checkout->order instanceof Order && ! $checkout->order->status->wasPaid()) {
-            $this->syncOpenPayment($checkout->order, $updater);
+            $sync->handle($checkout->order);
             $checkout->load('order');
         }
 
@@ -79,7 +72,7 @@ class CheckoutController extends Controller
         }
 
         return Inertia::render('checkout/Show', [
-            'checkout' => $this->present($checkout),
+            'checkout' => CheckoutPresenter::present($checkout),
         ]);
     }
 
@@ -121,26 +114,6 @@ class CheckoutController extends Controller
         return $this->toPayment($this->customer($request), $checkout, $pay);
     }
 
-    private function syncOpenPayment(Order $order, UpdatePaymentStatus $updater): void
-    {
-        $payment = $order->payments()
-            ->whereIn('status', [PaymentStatus::Created, PaymentStatus::RequiresAction, PaymentStatus::Processing])
-            ->whereNotNull('provider_payment_id')
-            ->latest('id')
-            ->first();
-
-        if ($payment === null) {
-            return;
-        }
-
-        try {
-            $updater->refresh($payment);
-        } catch (PaymentProviderException $e) {
-            // The webhook will settle it; the page shows the current state.
-            report($e);
-        }
-    }
-
     private function toPayment(User $customer, Checkout $checkout, StartPayment $pay): SymfonyResponse
     {
         $result = $pay->handle($customer, $checkout);
@@ -165,59 +138,6 @@ class CheckoutController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Your tickets were released.']);
 
         return to_route('events.show', ['event' => $event->slug]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function present(Checkout $checkout): array
-    {
-        $event = $checkout->event;
-
-        // A hold past its time is expired even if the sweep hasn't run yet.
-        $status = $checkout->status->holdsInventory() && $checkout->isExpired()
-            ? CheckoutStatus::Expired
-            : $checkout->status;
-
-        $order = $checkout->order;
-
-        return [
-            'id' => $checkout->public_id,
-            'status' => $status->value,
-            'expires_at' => $checkout->expires_at->toIso8601String(),
-            'seconds_left' => max(0, (int) now()->diffInSeconds($checkout->expires_at, false)),
-            'event' => [
-                'title' => $event->title,
-                'slug' => $event->slug,
-                'date_label' => LocalTime::display($event->starts_at, $event->timezone, 'D j M Y · H:i'),
-                'venue' => $event->venue?->name,
-                'city' => $event->venue?->city,
-            ],
-            'lines' => $checkout->reservations
-                ->map(fn (InventoryReservation $r): array => [
-                    'name' => $r->ticket_name_snapshot,
-                    'quantity' => $r->quantity,
-                    'unit_price' => Money::ofMinor($r->unit_amount_minor, $checkout->currency),
-                    'subtotal' => Money::ofMinor($r->subtotal_minor, $checkout->currency),
-                    'discount' => Money::ofMinor($r->discount_minor, $checkout->currency),
-                ])
-                ->values()
-                ->all(),
-            'subtotal' => $checkout->money('subtotal_minor'),
-            'discount' => $checkout->money('discount_minor'),
-            'fee' => $checkout->money('fees_minor'),
-            'tax' => $checkout->money('tax_minor'),
-            'total' => $checkout->money('total_minor'),
-            'promo_code' => $checkout->promoCode?->code,
-            'order' => $order instanceof Order ? [
-                'id' => $order->public_id,
-                'reference' => $order->reference,
-                'status' => $order->status->value,
-                'status_label' => $order->status->label(),
-                'payment_declined' => $order->status === OrderStatus::PaymentFailed,
-                'refunded' => $order->refunds()->where('reason', RefundUnfulfillableOrder::REASON)->exists(),
-            ] : null,
-        ];
     }
 
     private function customer(Request $request): User

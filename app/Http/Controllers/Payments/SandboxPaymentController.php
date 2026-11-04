@@ -37,6 +37,9 @@ class SandboxPaymentController extends Controller
                 'event' => $payment->order->event->title,
                 'email' => $payment->order->customer_email,
                 'cancel_url' => $session['cancel_url'],
+                // Opened from the app through a signed link: post back to
+                // the same signed address.
+                'action_url' => $request->hasValidSignature() ? $request->fullUrl() : null,
             ],
         ]);
     }
@@ -76,8 +79,11 @@ class SandboxPaymentController extends Controller
 
         $user = $request->user();
 
-        // Only the customer paying may open their payment screen.
-        abort_unless($payment !== null && $user instanceof User && $payment->order->belongsToCustomer($user), 404);
+        // Only the customer paying may open their payment screen: signed in
+        // on the website, or through the signed link the app opens in the
+        // phone's browser (which has no website session).
+        abort_if($payment === null, 404);
+        abort_unless($request->hasValidSignature() || ($user instanceof User && $payment->order->belongsToCustomer($user)), 404);
 
         $session = $gateway->session($paymentId);
         abort_if($session === null, 404);

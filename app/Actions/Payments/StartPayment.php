@@ -34,9 +34,10 @@ class StartPayment
     ) {}
 
     /**
-     * @return array{order: Order, redirect: string|null} redirect is null when no payment is needed
+     * @param  string|null  $returnUrl  where the provider sends the buyer afterwards; the checkout page by default
+     * @return array{order: Order, redirect: string|null, payment: Payment|null} redirect is null when no payment is needed
      */
-    public function handle(User $customer, Checkout $checkout): array
+    public function handle(User $customer, Checkout $checkout, ?string $returnUrl = null): array
     {
         Gate::forUser($customer)->authorize('update', $checkout);
 
@@ -47,7 +48,7 @@ class StartPayment
         }
 
         if ($order->status->wasPaid()) {
-            return ['order' => $order, 'redirect' => null];
+            return ['order' => $order, 'redirect' => null, 'payment' => null];
         }
 
         $checkout->refresh();
@@ -58,7 +59,7 @@ class StartPayment
         }
 
         if ($order->total_minor === 0) {
-            return ['order' => $this->completeOrder->handle($order), 'redirect' => null];
+            return ['order' => $this->completeOrder->handle($order), 'redirect' => null, 'payment' => null];
         }
 
         try {
@@ -100,10 +101,10 @@ class StartPayment
 
         // Pressing Pay again returns to the same provider page.
         if ($payment->checkout_url !== null) {
-            return ['order' => $order, 'redirect' => $payment->checkout_url];
+            return ['order' => $order, 'redirect' => $payment->checkout_url, 'payment' => $payment];
         }
 
-        $returnUrl = route('checkout.show', $checkout);
+        $returnUrl ??= route('checkout.show', $checkout);
 
         try {
             $session = $gateway->createCheckout(new CheckoutRequest(
@@ -126,6 +127,6 @@ class StartPayment
         $payment->checkout_url = $session->redirectUrl;
         $payment->save();
 
-        return ['order' => $order, 'redirect' => $session->redirectUrl];
+        return ['order' => $order, 'redirect' => $session->redirectUrl, 'payment' => $payment];
     }
 }
