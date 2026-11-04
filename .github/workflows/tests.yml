@@ -32,6 +32,20 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: tickora
+          MYSQL_DATABASE: tickora_test
+          MYSQL_USER: tickora
+          MYSQL_PASSWORD: tickora
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -ptickora"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     env:
       DB_CONNECTION: pgsql
@@ -56,7 +70,7 @@ jobs:
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.3'
-          extensions: pdo_pgsql, intl, pcntl, posix, gd, exif
+          extensions: pdo_pgsql, pdo_mysql, intl, pcntl, posix, gd, exif
           tools: composer:v2
           coverage: none
 
@@ -113,6 +127,18 @@ jobs:
           DB_DATABASE: ':memory:'
         run: php artisan test --exclude-group=postgres --log-junit junit-sqlite.xml
 
+      # Many managed hosts (Cloudways, cPanel) only offer MySQL/MariaDB.
+      - name: Tests (MySQL compatibility)
+        if: ${{ !cancelled() }}
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: tickora_test
+          DB_USERNAME: tickora
+          DB_PASSWORD: tickora
+        run: php artisan test --exclude-group=postgres --log-junit junit-mysql.xml
+
       - name: Report failing tests
         if: ${{ failure() && hashFiles('junit*.xml') != '' }}
         shell: python3 {0}
@@ -124,7 +150,7 @@ jobs:
               return text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
 
           failures = []
-          for path, label in (("junit.xml", "PostgreSQL"), ("junit-sqlite.xml", "SQLite")):
+          for path, label in (("junit.xml", "PostgreSQL"), ("junit-sqlite.xml", "SQLite"), ("junit-mysql.xml", "MySQL")):
               if not os.path.exists(path):
                   continue
               for case in ET.parse(path).iter("testcase"):
