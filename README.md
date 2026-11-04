@@ -63,6 +63,13 @@ A modular monolith: one Laravel app, one PostgreSQL database, business rules in 
 - **The database backs the rules up**: CHECK constraints on statuses, amounts and capacity; one active owner per organiser; an append-only `ledger_entries` table; immutable `audit_logs`; unique webhook event IDs.
 - **Privileged areas** use the `two-factor` route middleware. Suspended users are signed out on their next request.
 
+## Android app
+
+`mobile/` is the Flutter buyer app. GitHub Actions builds it on every
+change and publishes the APK as the latest release; see
+[`mobile/README.md`](mobile/README.md). It talks to the JSON API in
+`routes/api.php` (Sanctum tokens).
+
 ## Hosting
 
 See [docs/deployment.md](docs/deployment.md) for putting Tickora on a server for testers (staging) and for production.

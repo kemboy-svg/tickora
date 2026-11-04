@@ -137,7 +137,20 @@ php artisan tinker --execute="App\Models\User::where('email','you@example.com')-
    sale (the scheduler is running).
 6. Admin overview and organiser overview show the sale.
 
-## 7. Updating
+## 7. The Android app
+
+Testers install the APK from the repository's latest release
+(`tickora-android.apk`) and type the server's address on first launch,
+e.g. `staging.your-domain.com`. Nothing extra to set up on the server: the
+app uses `/api/v1` (run `php artisan migrate` so the token table exists).
+
+- `APP_URL` must be the public HTTPS address: payment providers return app
+  buyers to a signed page on it, and event photos are linked from it.
+- Smoke test: in the app, sign up, confirm the email, buy a ticket, pay on
+  the sandbox screen, tap **Open Tickora**, and the ticket's QR code shows
+  under **My tickets** (also with the phone offline).
+
+## 8. Updating
 
 ```bash
 php artisan down
@@ -149,7 +162,7 @@ php artisan optimize:clear && php artisan config:cache && php artisan route:cach
 php artisan up
 ```
 
-## 8. Backups and logs
+## 9. Backups and logs
 
 - Back up the database nightly (`pg_dump`) and keep `.env` (with `APP_KEY`)
   somewhere safe and separate.

@@ -44,6 +44,7 @@ export default defineConfig({
     },
     lint: {
         ignorePatterns: [
+            'mobile/**',
             'vendor/**',
             'node_modules/**',
             'public/**',
@@ -69,6 +70,7 @@ export default defineConfig({
         ignorePatterns: [
             '.github/**',
             'composer.json',
+            'mobile/**',
             'resources/js/components/ui/*',
             'resources/views/mail/*',
         ],
