@@ -24,13 +24,13 @@ terminal to show them again.
 
 ## What the server needs
 
-|            |                                                                                                                             |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
-| PHP        | 8.3 or newer, with `pdo_pgsql`, `intl`, `gd`, `exif`, `mbstring`, `bcmath`, `fileinfo`                                      |
-| Database   | PostgreSQL 15+ (not SQLite: the protections against two buyers getting the same ticket rely on it)                          |
-| Web server | Nginx (or any server that can run PHP-FPM) with HTTPS                                                                       |
-| Node       | 22, only to build the front end                                                                                             |
-| Email      | A transactional email service with your domain verified (SPF and DKIM), e.g. Postmark, Resend, Mailgun, Brevo or Amazon SES |
+|            |                                                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PHP        | 8.3 or newer, with `pdo_pgsql`, `intl`, `gd`, `exif`, `mbstring`, `bcmath`, `fileinfo`                                                            |
+| Database   | PostgreSQL 15+ (recommended) or MySQL 8 / MariaDB 10.6+. Not SQLite: the protections against two buyers getting the same ticket rely on row locks |
+| Web server | Nginx (or any server that can run PHP-FPM) with HTTPS                                                                                             |
+| Node       | 22, only to build the front end                                                                                                                   |
+| Email      | A transactional email service with your domain verified (SPF and DKIM), e.g. Postmark, Resend, Mailgun, Brevo or Amazon SES                       |
 
 A managed Laravel host (Laravel Cloud, or a VPS set up with Forge or Ploi)
 handles PHP, Nginx, HTTPS, cron and deploys for you; the steps below are what
@@ -66,8 +66,9 @@ APP_DEBUG=false
 APP_URL=https://staging.your-domain.com
 APP_KEY=base64:…            # generated above; never change it afterwards
 
-DB_CONNECTION=pgsql
+DB_CONNECTION=pgsql          # or mysql (then DB_PORT=3306)
 DB_HOST=…
+DB_PORT=5432
 DB_DATABASE=tickora
 DB_USERNAME=…
 DB_PASSWORD=…
