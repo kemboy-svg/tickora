@@ -1,0 +1,55 @@
+name: codespace
+
+# Runs the Codespaces test-server setup (.devcontainer) in the same image
+# and checks that the site and the app API answer, so starting a Codespace
+# works first time.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/codespace.yml'
+      - 'composer.json'
+      - 'package.json'
+      - 'database/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container: mcr.microsoft.com/devcontainers/php:1-8.3-bookworm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup (as on Codespace creation)
+        run: bash .devcontainer/setup.sh
+
+      - name: Start (as on Codespace start)
+        run: bash .devcontainer/start.sh
+
+      - name: The site and the app API answer
+        run: |
+          set -e
+          curl -fsS http://localhost:8000/api/v1/ping
+          echo
+          curl -fsS http://localhost:8000/ -o /dev/null
+          events=$(curl -fsS 'http://localhost:8000/api/v1/events' | php -r 'echo json_decode(stream_get_contents(STDIN), true)["meta"]["total"];')
+          echo "events listed: $events"
+          test "$events" -gt 0
+          test -s .devcontainer/.admin-password
+
+      - name: Server log
+        if: always()
+        run: tail -n 80 storage/logs/serve.log storage/logs/laravel.log 2>/dev/null || true

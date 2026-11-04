@@ -1,0 +1,26 @@
+{
+    "name": "Tickora test server",
+    "image": "mcr.microsoft.com/devcontainers/php:1-8.3-bookworm",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "hostRequirements": { "cpus": 2 },
+    "forwardPorts": [8000],
+    "portsAttributes": {
+        "8000": { "label": "Tickora", "onAutoForward": "notify" }
+    },
+    "postCreateCommand": "bash .devcontainer/setup.sh",
+    "postStartCommand": "bash .devcontainer/start.sh",
+    "secrets": {
+        "MAIL_HOST": {
+            "description": "SMTP host so testers receive confirmation emails (optional; without it emails go to the log)"
+        },
+        "MAIL_PORT": { "description": "SMTP port, usually 587" },
+        "MAIL_USERNAME": { "description": "SMTP username" },
+        "MAIL_PASSWORD": { "description": "SMTP password" },
+        "MAIL_FROM_ADDRESS": {
+            "description": "Sender address on a domain the SMTP service has verified"
+        }
+    }
+}
