@@ -4,6 +4,24 @@ This sets up a **staging** server: a private copy of Tickora for testers, with
 sandbox payments and test email. Production uses the same steps with the
 differences listed at the end.
 
+## Quick test link: GitHub Codespaces
+
+For a short round of testing without a server: on GitHub, open the
+repository, then **Code → Codespaces → Create codespace on main**. The first
+start takes a few minutes. It sets up the site with the December demo
+events and sandbox payments, and prints the public test link (also used in
+the app) and the admin password. Run `bash .devcontainer/start.sh` in its
+terminal to show them again.
+
+- The link only works while the Codespace runs. It stops after 30 idle
+  minutes by default (raise it in GitHub Settings → Codespaces); start it
+  again from github.com/codespaces and the same link returns.
+- Without email settings, confirmation emails go to the log. Confirm a
+  tester by hand with `php artisan tickora:verify-email someone@example.com`,
+  or add Codespaces secrets `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
+  `MAIL_PASSWORD` and `MAIL_FROM_ADDRESS` before creating it.
+- It uses SQLite; for real events, use a proper staging server (below).
+
 ## What the server needs
 
 |            |                                                                                                                             |
