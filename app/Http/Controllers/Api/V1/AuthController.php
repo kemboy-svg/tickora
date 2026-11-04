@@ -28,13 +28,16 @@ class AuthController extends Controller
         $device = $this->deviceName($request);
 
         // The same rules and checks as signing up on the website.
-        $created = $creator->create([
+        $user = $creator->create([
             'name' => $request->string('name')->toString(),
             'email' => $request->string('email')->toString(),
             'password' => $request->string('password')->toString(),
             'password_confirmation' => $request->string('password_confirmation')->toString(),
         ]);
-        $user = User::query()->findOrFail($created->getKey());
+
+        if (! $user instanceof User) {
+            throw new \LogicException('Sign-up must create an App\\Models\\User.');
+        }
 
         // Sends the confirmation email.
         event(new Registered($user));
