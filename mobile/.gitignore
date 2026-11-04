@@ -1,0 +1,16 @@
+# Generated in CI by `flutter create` (see tool/prepare_android.py)
+/android/
+/ios/
+/web/
+/linux/
+/macos/
+/windows/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.metadata
+build/
+pubspec.lock
+*.iml
+.idea/
