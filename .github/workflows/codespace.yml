@@ -34,12 +34,25 @@ jobs:
           node-version: '22'
 
       - name: Setup (as on Codespace creation)
-        run: bash .devcontainer/setup.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          bash .devcontainer/setup.sh 2>&1 | tee "$RUNNER_TEMP/setup.log" || {
+            echo "::error title=Setup failed::$(tail -c 3500 "$RUNNER_TEMP/setup.log" | tr '\n' ' ')"
+            exit 1
+          }
 
       - name: Start (as on Codespace start)
-        run: bash .devcontainer/start.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          bash .devcontainer/start.sh 2>&1 | tee "$RUNNER_TEMP/start.log" || {
+            echo "::error title=Start failed::$(tail -c 2000 "$RUNNER_TEMP/start.log" | tr '\n' ' ') $(tail -c 1500 storage/logs/serve.log 2>/dev/null | tr '\n' ' ')"
+            exit 1
+          }
 
       - name: The site and the app API answer
+        shell: bash
         run: |
           set -e
           curl -fsS http://localhost:8000/api/v1/ping

@@ -14,7 +14,10 @@ for ext in intl gd exif bcmath pcntl; do
     php -m | grep -qix "$ext" || missing="$missing $ext"
 done
 if [ -n "$missing" ]; then
-    $SUDO apt-get update -qq
+    # Some base images ship a Yarn package source with an expired key,
+    # which makes apt-get update fail; Tickora uses npm.
+    $SUDO rm -f /etc/apt/sources.list.d/yarn.list
+    $SUDO apt-get update -qq || true
     $SUDO apt-get install -y -qq libicu-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev libzip-dev sqlite3 >/dev/null
     $SUDO docker-php-ext-configure gd --with-freetype --with-jpeg >/dev/null
     # shellcheck disable=SC2086
