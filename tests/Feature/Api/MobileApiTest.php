@@ -54,6 +54,17 @@ class MobileApiTest extends TestCase
         return $this;
     }
 
+    /**
+     * The phone's browser: no app token, no website session.
+     */
+    private function browser(): static
+    {
+        $this->app['auth']->forgetGuards();
+        $this->app['auth']->shouldUse('web');
+
+        return $this->withoutToken();
+    }
+
     public function test_the_app_can_check_the_server_address(): void
     {
         $this->getJson('/api/v1/ping')
@@ -191,8 +202,7 @@ class MobileApiTest extends TestCase
         $this->assertStringContainsString('/sandbox/payments/'.$payment->provider_payment_id, $url);
         $this->assertStringContainsString('signature=', $url);
 
-        $this->app['auth']->forgetGuards();
-        $this->get($url)->assertOk();
+        $this->browser()->get($url)->assertOk();
 
         // The unsigned address still needs the buyer's website session.
         $this->get('/sandbox/payments/'.$payment->provider_payment_id)->assertNotFound();
@@ -227,8 +237,7 @@ class MobileApiTest extends TestCase
         $this->assertInstanceOf(FakePaymentGateway::class, $gateway);
         $gateway->simulate((string) $payment->provider_payment_id, PaymentStatus::Succeeded);
 
-        $this->app['auth']->forgetGuards();
-        $this->get(URL::signedRoute('app.payment-return', ['checkout' => $checkout]))
+        $this->browser()->get(URL::signedRoute('app.payment-return', ['checkout' => $checkout]))
             ->assertOk()
             ->assertSee('Payment received')
             ->assertSee('tickora://checkout/'.$checkout);

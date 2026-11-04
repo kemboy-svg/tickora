@@ -14,7 +14,6 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Fortify;
-use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Sign-up and sign-in for the mobile app. Each signed-in phone gets its own
@@ -29,12 +28,13 @@ class AuthController extends Controller
         $device = $this->deviceName($request);
 
         // The same rules and checks as signing up on the website.
-        $user = $creator->create([
+        $created = $creator->create([
             'name' => $request->string('name')->toString(),
             'email' => $request->string('email')->toString(),
             'password' => $request->string('password')->toString(),
             'password_confirmation' => $request->string('password_confirmation')->toString(),
         ]);
+        $user = User::query()->findOrFail($created->getKey());
 
         // Sends the confirmation email.
         event(new Registered($user));
@@ -103,11 +103,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $token = $this->current($request)->currentAccessToken();
-
-        if ($token instanceof PersonalAccessToken) {
-            $token->delete();
-        }
+        $this->current($request)->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Signed out.']);
     }

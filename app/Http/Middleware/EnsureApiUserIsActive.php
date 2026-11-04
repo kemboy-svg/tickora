@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -19,11 +18,7 @@ class EnsureApiUserIsActive
         $user = $request->user();
 
         if ($user instanceof User && ! $user->isActive()) {
-            $token = $user->currentAccessToken();
-
-            if ($token instanceof PersonalAccessToken) {
-                $token->delete();
-            }
+            $user->currentAccessToken()->delete();
 
             abort(403, 'This account has been suspended. Contact support for help.');
         }
