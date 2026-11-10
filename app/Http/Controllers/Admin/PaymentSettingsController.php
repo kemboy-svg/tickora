@@ -6,6 +6,7 @@ use App\Enums\PaymentProvider;
 use App\Enums\Permission;
 use App\Exceptions\Payments\PaymentProviderException;
 use App\Http\Controllers\Controller;
+use App\Models\Event;
 use App\Models\PaymentGatewaySetting;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
@@ -57,7 +58,65 @@ class PaymentSettingsController extends Controller
             'providers' => $providers,
             'default_provider' => $gateways->defaultDriver(),
             'sandbox_available' => ! app()->isProduction(),
+            'checks' => $this->checks($settings->all(), $gateways),
         ]);
+    }
+
+    /**
+     * What stands between this server and taking payments: test keys in
+     * production, live keys on a test server, missing webhook secrets.
+     *
+     * @param  array<string, PaymentGatewaySetting>  $settings
+     * @return list<array{level: 'ok'|'warning'|'problem', message: string}>
+     */
+    private function checks(array $settings, PaymentGatewayManager $gateways): array
+    {
+        $production = app()->isProduction();
+        $checks = [];
+        $usable = array_filter($settings, fn (PaymentGatewaySetting $s): bool => $s->isUsable());
+
+        if ($production && $usable === []) {
+            $checks[] = ['level' => 'problem', 'message' => "No provider is switched on, so buyers can't pay. Add your live keys below and switch a provider on."];
+        }
+
+        foreach ($usable as $setting) {
+            $label = $setting->provider->label();
+
+            if ($production && $setting->mode() === 'test') {
+                $checks[] = ['level' => 'problem', 'message' => "{$label} is using test keys: buyers can't pay with real cards. Replace them with the live keys (sk_live_…)."];
+            }
+
+            if (! $production && $setting->mode() === 'live') {
+                $checks[] = ['level' => 'warning', 'message' => "{$label} has live keys on a test server: real cards will be charged here."];
+            }
+
+            if ($setting->provider === PaymentProvider::Stripe && ($setting->webhook_secret === null || $setting->webhook_secret === '')) {
+                $checks[] = ['level' => 'warning', 'message' => "Add Stripe's webhook signing secret (whsec_…) from a {$setting->mode()}-mode webhook pointing at the URL below, so orders complete even if the buyer closes the page after paying."];
+            }
+        }
+
+        if ($production && ! str_starts_with((string) config('app.url'), 'https://')) {
+            $checks[] = ['level' => 'warning', 'message' => 'APP_URL does not start with https://. Payment providers return buyers to it; set it to the public HTTPS address.'];
+        }
+
+        if ($production) {
+            $sandboxEvents = Event::query()
+                ->where('payment_provider', PaymentProvider::Fake->value)
+                ->where('ends_at', '>', now())
+                ->count();
+
+            if ($sandboxEvents > 0 && $usable !== []) {
+                $default = PaymentProvider::tryFrom($gateways->defaultDriver())?->label() ?? 'the default';
+                $checks[] = ['level' => 'warning', 'message' => "{$sandboxEvents} upcoming ".($sandboxEvents === 1 ? 'event is' : 'events are')." set to the sandbox, which doesn't exist on a live server. They use {$default} instead; change them under Event review if needed."];
+            }
+        }
+
+        if ($production && $checks === []) {
+            $names = implode(' and ', array_map(fn (PaymentGatewaySetting $s): string => $s->provider->label(), $usable));
+            $checks[] = ['level' => 'ok', 'message' => "Ready to take live payments through {$names}."];
+        }
+
+        return $checks;
     }
 
     public function update(Request $request, string $provider, AuditLogger $audit): RedirectResponse

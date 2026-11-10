@@ -53,6 +53,11 @@ final class FakePaymentGateway implements PaymentGateway
         return 'fake';
     }
 
+    public function mode(): string
+    {
+        return 'test';
+    }
+
     public function verifyCredentials(): void
     {
         // Nothing to check: the sandbox has no account.

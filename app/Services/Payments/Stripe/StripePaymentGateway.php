@@ -56,6 +56,11 @@ final class StripePaymentGateway implements PaymentGateway
         return 'stripe';
     }
 
+    public function mode(): string
+    {
+        return str_starts_with($this->secretKey, 'sk_live_') || str_starts_with($this->secretKey, 'rk_live_') ? 'live' : 'test';
+    }
+
     public function verifyCredentials(): void
     {
         $this->send(fn (PendingRequest $r) => $r->get('/balance'));

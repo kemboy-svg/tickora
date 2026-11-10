@@ -194,5 +194,31 @@ php artisan up
 
 - `APP_ENV=production`: the sandbox provider no longer exists, two-factor is
   always required for admins, and passwords must be strong.
-- Live Stripe/Paystack keys and live-mode webhooks (see the README).
 - Never run `db:seed` with demo data.
+
+## Going live with payments
+
+1. Set `APP_ENV=production` and `APP_URL` to the public `https://` address,
+   then `php artisan migrate --force` and `php artisan config:cache`.
+2. Sign in as an admin, open **Payment settings**, paste the **live** secret
+   key (`sk_live_…`; Stripe's public key `pk_live_…` too) and switch the
+   provider on. **Test connection** should say "live mode".
+3. Stripe: in the Stripe dashboard (live mode, not test), add a webhook
+   endpoint with the URL shown on the card, for the events
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.async_payment_failed` and `checkout.session.expired`,
+   then paste its signing secret (`whsec_…`). The live secret differs from
+   the test one. Paystack: set the webhook URL shown on the card in the
+   Paystack dashboard (live); it is signed with the secret key.
+4. The checklist at the top of Payment settings must say **Ready to take
+   live payments**. It flags test keys, a missing webhook secret, a
+   non-HTTPS `APP_URL` and events still set to the sandbox.
+5. Buy one cheap ticket with a real card and refund it from the provider's
+   dashboard.
+
+Which provider an order uses: the one chosen for the event under Event
+review; otherwise the default; otherwise any switched-on provider that can
+charge in the event's currency (Stripe for MUR; Paystack for KES, NGN, GHS,
+ZAR, USD). Switching from test to live keys is safe while buyers are
+checking out: a payment page opened with the test keys is abandoned and the
+buyer gets a live one when they press Pay again.

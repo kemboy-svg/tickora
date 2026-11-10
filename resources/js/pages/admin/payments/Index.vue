@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { ShieldCheck } from '@lucide/vue';
+import {
+    CircleAlert,
+    CircleCheck,
+    ShieldCheck,
+    TriangleAlert,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PaymentProviderCard from '@/components/admin/PaymentProviderCard.vue';
@@ -10,7 +15,22 @@ const props = defineProps<{
     providers: ProviderSettings[];
     default_provider: string;
     sandbox_available: boolean;
+    checks: { level: 'ok' | 'warning' | 'problem'; message: string }[];
 }>();
+
+const checkStyles = {
+    ok: 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100',
+    warning:
+        'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100',
+    problem:
+        'border-red-200 bg-red-50 text-red-950 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100',
+} as const;
+
+const checkIcons = {
+    ok: CircleCheck,
+    warning: TriangleAlert,
+    problem: CircleAlert,
+} as const;
 
 defineOptions({
     layout: {
@@ -50,6 +70,27 @@ function saveDefault(): void {
                 review.
             </p>
         </header>
+
+        <section
+            v-if="checks.length > 0"
+            aria-label="Ready for live payments?"
+            class="flex flex-col gap-2"
+        >
+            <p
+                v-for="(check, index) in checks"
+                :key="index"
+                class="flex items-start gap-3 rounded-xl border p-4 text-sm"
+                :class="checkStyles[check.level]"
+                :role="check.level === 'problem' ? 'alert' : undefined"
+            >
+                <component
+                    :is="checkIcons[check.level]"
+                    class="mt-0.5 size-5 shrink-0"
+                    aria-hidden="true"
+                />
+                <span>{{ check.message }}</span>
+            </p>
+        </section>
 
         <p
             class="flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-100"

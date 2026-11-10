@@ -59,16 +59,108 @@ class PaymentGatewayManager
     }
 
     /**
-     * The gateway new payments for this event go through.
+     * The gateway new payments for this event go through:
+     *
+     *  1. the provider an admin chose for the event, which must be ready
+     *    (the sandbox choice is ignored in production, where it can't run);
+     *  2. otherwise the admin's default, if it is ready and can charge in
+     *    the event's currency;
+     *  3. otherwise any switched-on provider that can;
+     *  4. otherwise, outside production, the configured fallback (the
+     *    sandbox).
      */
     public function forEvent(Event $event): PaymentGateway
     {
-        $provider = $event->payment_provider ?? PaymentProvider::tryFrom($this->defaultDriver());
+        $chosen = $event->payment_provider;
 
-        if ($provider === null) {
-            throw PaymentProviderException::unknownProvider($this->defaultDriver());
+        if ($chosen === PaymentProvider::Fake && $this->app->isProduction()) {
+            $chosen = null;
         }
 
+        if ($chosen !== null) {
+            return $this->ready($chosen, $event->currency);
+        }
+
+        $candidates = $this->usableProviders();
+        $default = PaymentGatewaySetting::query()->where('is_default', true)->first();
+
+        if ($default !== null && $default->isUsable()) {
+            // The default first, then the others.
+            usort($candidates, fn (PaymentProvider $a, PaymentProvider $b): int => ($b === $default->provider) <=> ($a === $default->provider));
+        }
+
+        foreach ($candidates as $provider) {
+            $gateway = $this->driver($provider->value);
+
+            if ($gateway->supportsCurrency($event->currency)) {
+                return $gateway;
+            }
+        }
+
+        if ($this->app->isProduction()) {
+            throw $candidates === []
+                ? new PaymentProviderException('No payment provider is switched on: an admin needs to add live keys in Payment settings.')
+                : PaymentProviderException::unsupportedCurrency(
+                    implode(', ', array_map(fn (PaymentProvider $p): string => $p->label(), $candidates)),
+                    $event->currency,
+                );
+        }
+
+        $fallback = PaymentProvider::tryFrom($this->configuredFallback())
+            ?? throw PaymentProviderException::unknownProvider($this->configuredFallback());
+
+        return $this->ready($fallback, $event->currency);
+    }
+
+    /**
+     * The provider used when an event has none chosen, as shown to admins:
+     * the admin's default if it is ready, otherwise the first switched-on
+     * provider, otherwise the configured fallback (never the sandbox in
+     * production).
+     */
+    public function defaultDriver(): string
+    {
+        $default = PaymentGatewaySetting::query()->where('is_default', true)->first();
+
+        if ($default !== null && $default->isUsable()) {
+            return $default->provider->value;
+        }
+
+        $configured = $this->configuredFallback();
+
+        if (! $this->app->isProduction() || $configured !== PaymentProvider::Fake->value) {
+            return $configured;
+        }
+
+        return ($this->usableProviders()[0] ?? PaymentProvider::Stripe)->value;
+    }
+
+    /**
+     * Stripe and Paystack, when switched on with keys.
+     *
+     * @return list<PaymentProvider>
+     */
+    public function usableProviders(): array
+    {
+        $usable = PaymentGatewaySetting::query()
+            ->where('enabled', true)
+            ->get()
+            ->filter(fn (PaymentGatewaySetting $s): bool => $s->isUsable())
+            ->map(fn (PaymentGatewaySetting $s): PaymentProvider => $s->provider)
+            ->all();
+
+        return array_values(array_filter(
+            PaymentProvider::configurable(),
+            fn (PaymentProvider $p): bool => in_array($p, $usable, true),
+        ));
+    }
+
+    /**
+     * A provider that must be switched on, with keys, and able to charge
+     * in the currency.
+     */
+    private function ready(PaymentProvider $provider, string $currency): PaymentGateway
+    {
         if ($provider !== PaymentProvider::Fake) {
             $settings = PaymentGatewaySetting::for($provider);
 
@@ -83,29 +175,18 @@ class PaymentGatewayManager
 
         $gateway = $this->driver($provider->value);
 
-        if (! $gateway->supportsCurrency($event->currency)) {
-            throw PaymentProviderException::unsupportedCurrency($provider->label(), $event->currency);
+        if (! $gateway->supportsCurrency($currency)) {
+            throw PaymentProviderException::unsupportedCurrency($provider->label(), $currency);
         }
 
         return $gateway;
     }
 
-    /**
-     * The provider used when an event has none chosen: the admin's
-     * default if it is ready, otherwise the configured fallback (the
-     * sandbox outside production).
-     */
-    public function defaultDriver(): string
+    private function configuredFallback(): string
     {
-        $default = PaymentGatewaySetting::query()->where('is_default', true)->first();
-
-        if ($default !== null && $default->isUsable()) {
-            return $default->provider->value;
-        }
-
         $configured = $this->config->get('tickora.payments.default', 'fake');
 
-        return is_string($configured) ? $configured : 'fake';
+        return is_string($configured) && $configured !== '' ? $configured : 'fake';
     }
 
     /**

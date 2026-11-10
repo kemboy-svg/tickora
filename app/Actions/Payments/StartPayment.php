@@ -24,7 +24,8 @@ use Illuminate\Validation\ValidationException;
  * One payment attempt is open at a time: pressing "Pay" again (or going
  * back and forth) reuses the open attempt with the same idempotency key,
  * so the provider never creates a second charge. After a decline, the
- * next press starts a fresh attempt while the hold lasts.
+ * next press starts a fresh attempt while the hold lasts; so does a change
+ * of keys (test to live) or a payment page that could not be created.
  */
 class StartPayment
 {
@@ -81,15 +82,22 @@ class StartPayment
                 ->latest('id')
                 ->first();
 
-            if ($open !== null) {
+            if ($open !== null && $open->provider_mode === $gateway->mode()) {
                 return $open;
             }
+
+            // Opened with the other keys (test before going live, or the
+            // reverse): that provider page belongs to another account mode
+            // and can no longer be paid. Start a fresh attempt instead.
+            $open?->forceFill(['failure_code' => 'keys_changed'])
+                ->applyProviderStatus(PaymentStatus::Failed, 'abandoned: payment keys changed');
 
             $attempt = Payment::query()->where('order_id', $order->id)->count() + 1;
 
             $payment = new Payment;
             $payment->order_id = $order->id;
             $payment->provider = $gateway->name();
+            $payment->provider_mode = $gateway->mode();
             $payment->idempotency_key = "order:{$order->public_id}:attempt:{$attempt}";
             $payment->currency = $order->currency;
             $payment->amount_minor = $order->total_minor;
@@ -118,6 +126,12 @@ class StartPayment
             ));
         } catch (PaymentProviderException $e) {
             report($e);
+
+            // Retire this attempt so the next press starts a new one with a
+            // new reference: Paystack refuses to initialise a reference
+            // twice, so retrying the same attempt would fail forever.
+            $payment->forceFill(['failure_code' => 'checkout_not_created'])
+                ->applyProviderStatus(PaymentStatus::Failed, 'payment page not created');
 
             throw ValidationException::withMessages(['checkout' => "We couldn't open the payment page. No money was taken; please try again in a moment."]);
         }

@@ -19,6 +19,9 @@ trait FakesPaymentProviders
 
     protected const PAYSTACK_SECRET = 'sk_test_paystackTestKey9876';
 
+    /** The id Stripe gives the next checkout session. */
+    protected string $stripeSessionId = 'cs_test_123';
+
     /** Stripe session state returned by GET /checkout/sessions/{id}. */
     protected string $stripeSessionStatus = 'open';
 
@@ -61,7 +64,7 @@ trait FakesPaymentProviders
 
             if (str_starts_with($url, 'https://api.stripe.com/v1/checkout/sessions/') && $method === 'GET') {
                 return Http::response([
-                    'id' => 'cs_test_123',
+                    'id' => $this->stripeSessionId,
                     'object' => 'checkout.session',
                     'status' => $this->stripeSessionStatus,
                     'payment_status' => $this->stripePaymentStatus,
@@ -78,9 +81,9 @@ trait FakesPaymentProviders
                 $this->stripeAmount = (int) ($form['line_items'][0]['price_data']['unit_amount'] ?? 0);
 
                 return Http::response([
-                    'id' => 'cs_test_123',
+                    'id' => $this->stripeSessionId,
                     'object' => 'checkout.session',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_123',
+                    'url' => 'https://checkout.stripe.com/c/pay/'.$this->stripeSessionId,
                     'status' => 'open',
                     'payment_status' => 'unpaid',
                     'amount_total' => $this->stripeAmount,

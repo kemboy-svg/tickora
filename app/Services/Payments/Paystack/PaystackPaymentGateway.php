@@ -54,6 +54,11 @@ final class PaystackPaymentGateway implements PaymentGateway
         return 'paystack';
     }
 
+    public function mode(): string
+    {
+        return str_starts_with($this->secretKey, 'sk_live_') ? 'live' : 'test';
+    }
+
     public function verifyCredentials(): void
     {
         $this->send(fn (PendingRequest $r) => $r->get('/balance'));

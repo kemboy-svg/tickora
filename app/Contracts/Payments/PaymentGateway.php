@@ -35,6 +35,13 @@ interface PaymentGateway
     public function name(): string;
 
     /**
+     * "live" when the keys move real money, otherwise "test". Payments
+     * remember it, so an attempt opened with test keys is never reused
+     * after an admin switches to live keys (or back).
+     */
+    public function mode(): string;
+
+    /**
      * Make a harmless authenticated call to check the configured keys.
      *
      * @throws PaymentProviderException with a message safe to show admins
