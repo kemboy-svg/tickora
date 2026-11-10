@@ -13,7 +13,6 @@ use App\Models\Payment;
 use App\Models\PaymentGatewaySetting;
 use App\Models\TicketType;
 use App\Models\User;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -38,6 +37,8 @@ class LivePaymentsTest extends TestCase
      */
     private string $stripeLive;
 
+    private const CSRF = 'live-payments-test-token';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -52,8 +53,9 @@ class LivePaymentsTest extends TestCase
         $this->app->detectEnvironment(fn (): string => 'production');
         $this->assertTrue($this->app->isProduction());
 
-        // Laravel only skips CSRF checks in the testing environment.
-        $this->withoutMiddleware(ValidateCsrfToken::class);
+        // Laravel only skips CSRF checks in the testing environment, so
+        // send a token like a browser would.
+        $this->withSession(['_token' => self::CSRF]);
     }
 
     private function liveStripe(bool $default = false): PaymentGatewaySetting
@@ -78,7 +80,7 @@ class LivePaymentsTest extends TestCase
     {
         $type = $event->ticketTypes()->firstOrFail();
 
-        $response = $this->actingAs($buyer)->post('/checkout', ['event' => $event->public_id, 'items' => [$type->public_id => 1]]);
+        $response = $this->actingAs($buyer)->post('/checkout', ['_token' => self::CSRF, 'event' => $event->public_id, 'items' => [$type->public_id => 1]]);
         $response->assertSessionHasNoErrors();
 
         $checkout = Checkout::query()->where('user_id', $buyer->id)->latest('id')->first();
@@ -97,7 +99,7 @@ class LivePaymentsTest extends TestCase
         $buyer = User::factory()->create();
         $checkout = $this->hold($buyer, $event);
 
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm")
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm", ['_token' => self::CSRF])
             ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_123');
 
         $payment = Payment::query()->firstOrFail();
@@ -126,7 +128,7 @@ class LivePaymentsTest extends TestCase
         $buyer = User::factory()->create();
         $checkout = $this->hold($buyer, $event);
 
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm")
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm", ['_token' => self::CSRF])
             ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_123');
     }
 
@@ -137,7 +139,7 @@ class LivePaymentsTest extends TestCase
         $buyer = User::factory()->create();
         $checkout = $this->hold($buyer, $event);
 
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm")
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm", ['_token' => self::CSRF])
             ->assertSessionHasErrors('checkout');
 
         $this->assertSame(0, Payment::query()->count());
@@ -150,14 +152,14 @@ class LivePaymentsTest extends TestCase
         $buyer = User::factory()->create();
         $checkout = $this->hold($buyer, $event);
 
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm")
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm", ['_token' => self::CSRF])
             ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_123');
 
         // The admin pastes the live keys while the buyer is still deciding.
         $this->liveStripe(default: true);
         $this->stripeSessionId = 'cs_live_456';
 
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/pay")
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/pay", ['_token' => self::CSRF])
             ->assertRedirect('https://checkout.stripe.com/c/pay/cs_live_456');
 
         $payments = Payment::query()->orderBy('id')->get();
@@ -180,10 +182,10 @@ class LivePaymentsTest extends TestCase
         $checkout = $this->hold($buyer, $event);
 
         $this->providersDown = true;
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm")->assertSessionHasErrors('checkout');
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/confirm", ['_token' => self::CSRF])->assertSessionHasErrors('checkout');
 
         $this->providersDown = false;
-        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/pay")
+        $this->actingAs($buyer)->post("/checkout/{$checkout->public_id}/pay", ['_token' => self::CSRF])
             ->assertRedirect('https://checkout.paystack.com/abc123');
 
         $payments = Payment::query()->orderBy('id')->get();
