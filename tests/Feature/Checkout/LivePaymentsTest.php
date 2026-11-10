@@ -13,6 +13,7 @@ use App\Models\Payment;
 use App\Models\PaymentGatewaySetting;
 use App\Models\TicketType;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -50,6 +51,9 @@ class LivePaymentsTest extends TestCase
     {
         $this->app->detectEnvironment(fn (): string => 'production');
         $this->assertTrue($this->app->isProduction());
+
+        // Laravel only skips CSRF checks in the testing environment.
+        $this->withoutMiddleware(ValidateCsrfToken::class);
     }
 
     private function liveStripe(bool $default = false): PaymentGatewaySetting
