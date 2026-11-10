@@ -78,10 +78,15 @@ class LivePaymentsTest extends TestCase
     {
         $type = $event->ticketTypes()->firstOrFail();
 
-        $this->actingAs($buyer)->post('/checkout', ['event' => $event->public_id, 'items' => [$type->public_id => 1]])
-            ->assertSessionHasNoErrors();
+        $response = $this->actingAs($buyer)->post('/checkout', ['event' => $event->public_id, 'items' => [$type->public_id => 1]]);
+        $response->assertSessionHasNoErrors();
 
-        return Checkout::query()->where('user_id', $buyer->id)->latest('id')->firstOrFail();
+        $checkout = Checkout::query()->where('user_id', $buyer->id)->latest('id')->first();
+        $this->assertNotNull($checkout, 'No checkout created. HTTP '.$response->getStatusCode()
+            .' → '.($response->headers->get('Location') ?? '').' '.mb_substr((string) $response->getContent(), 0, 600)
+            .' session: '.json_encode(session()->all()));
+
+        return $checkout;
     }
 
     public function test_live_stripe_keys_take_payments_without_choosing_a_default(): void
